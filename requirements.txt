@@ -1,5 +1,6 @@
-numpy
+numpy<2  # labscript 3.4 is not compatible with NumPy 2
 scipy
 matplotlib
+h5py
 
 labscript-suite

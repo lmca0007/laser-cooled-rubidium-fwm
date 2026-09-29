@@ -1,2 +1,14 @@
-2026/
-base_experiment_globals
+/localstorage/
+
+# runmanager bookkeeping
+.next_sequence_index
+
+# Python
+__pycache__/
+*.pyc
+
+# offline compile output (tools/check_sequence.py)
+/tools/_out/
+
+# regenerable analysis figures
+/analysis/**/output/
