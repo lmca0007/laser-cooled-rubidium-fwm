@@ -132,7 +132,7 @@ def fit(od, fit_od0=True, clip=inf):
 fit_prefixes = []
 
 images = {}
-with h5py.File(run.h5_path) as h5_file:
+with h5py.File(run.h5_path, 'r') as h5_file:
     for key, val in h5_file["results"]["fluoro_frame"].items():
         if key.endswith("_img"):
             images[key] = val[:]
@@ -161,7 +161,8 @@ for key, val in images.items():
             # get the roi
             #x1,y1,x2,y2 = dataset[orientation, roi_name] ### Hard-coded!
             if dataset.get('roi_full',True):
-                x1,y1,x2,y2 = 0,0,2752,2200
+                y2, x2 = raw_OD.shape
+                x1,y1 = 0,0
             else:
                 x1,y1,x2,y2 = [dataset.get('roi_x1'),dataset.get('roi_y1'),dataset.get('roi_x2'),dataset.get('roi_y2')]
             # We may only be saving part of the chip, so readjust the coordinates to take this into account
@@ -174,16 +175,8 @@ for key, val in images.items():
             OD = raw_OD[y1:y2,x1:x2]
             prefix = key[:-4] + "_" + roi_name 
             #pixel_size = dataset[orientation,'effective_pixel_size']
-            pixel_size = 4.2e-6
-            
-            # Override BIAS pixel size with one from global in case the connection table has not been recompiled since the last update to the value
-            # or the BIAS has not been restarted since the last connection table recompilation
-            if dataset.get('side_imaging', True) and dataset.get('fluorescence_imaging', True):
-                pixel_size = dataset.get('side_pixel_size')
-            
-            elif dataset.get('bottom_imaging', True) and dataset.get('fluorescence_imaging', True):
-                pixel_size = dataset.get('bottom_pixel_size')
-            
+            pixel_size = dataset.get(orientation + '_pixel_size')
+
             
 
             #try:

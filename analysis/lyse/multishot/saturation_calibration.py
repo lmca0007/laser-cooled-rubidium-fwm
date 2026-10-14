@@ -1,4 +1,4 @@
-from lyse import *
+﻿from lyse import *
 from pylab import *
 from analysislib.krb2 import aliases
 from analysislib.common.traces import *
@@ -22,9 +22,9 @@ n0_sums = []
 ys = []
 for fname in df['filepath']:
     run = Run(fname)
-    atoms = float64(run.get_image(*(image_conf + ['atoms'])))
-    flat = float64(run.get_image(*(image_conf + ['flat'])))
-    dark = float64(run.get_image(*(image_conf + ['dark'])))
+    atoms = squeeze(float64(run.get_image(*(image_conf + ['atoms']))))
+    flat = squeeze(float64(run.get_image(*(image_conf + ['flat']))))
+    dark = squeeze(float64(run.get_image(*(image_conf + ['dark']))))
     atoms_crop = atoms[y1:y2,x1:x2]
     flat_crop = flat[y1:y2,x1:x2]
     dark_crop = dark[y1:y2,x1:x2]

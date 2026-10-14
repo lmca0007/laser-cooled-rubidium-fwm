@@ -152,19 +152,10 @@ def fit(od, fit_od0=True, clip=inf):
 fit_prefixes = []
 
 images = {}
-with lyse.h5py.File(run.h5_path) as h5_file:
-    if "/results/eigenfringe_OD" in h5_file:
-        for key, val in h5_file["results"]["eigenfringe_OD"].items():
-            if key =="OD":
-                images['top_rb87__OD'] = val[:]
-        if not images:
-            for key, val in h5_file["results"]["OD_calc"].items():
-                if key.endswith("__OD"):
-                    images[key] = val[:]
-    else:
-        for key, val in h5_file["results"]["OD_calc"].items():
-            if key.endswith("__OD"):
-                images[key] = val[:]
+with lyse.h5py.File(run.h5_path, 'r') as h5_file:
+    for key, val in h5_file["results"]["OD_calc"].items():
+        if key.endswith("__OD"):
+            images[key] = val[:]
 
 for key, val in images.items():
     raw_OD = val
@@ -194,8 +185,10 @@ for key, val in images.items():
             # We may only be saving part of the chip, so readjust the coordinates to take this into account
             #x1, y1 = x1-dataset[orientation, 'roi_left'], y1-dataset[orientation, 'roi_top']
             #x2, y2 = x2-dataset[orientation, 'roi_left'], y2-dataset[orientation, 'roi_top']
-            if dataset.get('roi_full',True):
-                x1,y1,x2,y2 = 0,0,2752,2200
+            # roi_* globals are side camera pixels, so other cameras use the full frame
+            if dataset.get('roi_full',True) or orientation != 'side':
+                y2, x2 = raw_OD.shape
+                x1,y1 = 0,0
             else:
                 x1,y1,x2,y2 = [dataset.get('roi_x1'),dataset.get('roi_y1'),dataset.get('roi_x2'),dataset.get('roi_y2')]
 
@@ -207,16 +200,9 @@ for key, val in images.items():
             prefix = key[:-4] + "_" + roi_name
             # print prefix
             #pixel_size = dataset[orientation,'effective_pixel_size']
-            pixel_size = 4.2e-6
-            
-            # Override BIAS pixel size with one from global in case the connection table has not been recompiled since the last update to the value
-            # or the BIAS has not been restarted since the last connection table recompilation
-            if dataset.get('side_imaging', True) and dataset.get('absorption_imaging', True):
-                pixel_size = dataset.get('side_pixel_size')
-            
-            elif dataset.get('bottom_imaging', True) and dataset.get('absorption_imaging', True):
-                pixel_size = dataset.get('bottom_pixel_size')
-                        
+            # Pixel size of this camera from the Cameras globals
+            pixel_size = dataset.get(orientation + '_pixel_size')
+
             figure("atomfit - " + prefix)
             params, err = fit(prefix, OD, binsize=max(1, int((OD.shape[0]*OD.shape[1])**0.5/200)), fit_od0=fit_od0, clip=fit_clip)
             #params, err = fit(prefix, OD, binsize=2, fit_od0=fit_od0, clip=fit_clip)

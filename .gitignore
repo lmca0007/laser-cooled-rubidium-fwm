@@ -12,3 +12,9 @@ __pycache__/
 
 # regenerable analysis figures
 /analysis/**/output/
+/optics/**/output/
+
+# shot folders (written by runmanager) and csv exports
+/[0-9][0-9][0-9][0-9]/
+/csv_exports/
+/crossings_*.pickle

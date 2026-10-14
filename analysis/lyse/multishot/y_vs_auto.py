@@ -1,10 +1,11 @@
-from __future__ import print_function
+﻿from __future__ import print_function
 from lyse import *
 from pylab import *
 from analysislib.krb2 import aliases
 from analysislib.common.imshow_irreg import imshow_irreg
 import matplotlib.cm as cm
 import csv
+import os
 import time
 # import lmfit
 
@@ -43,24 +44,11 @@ units = last_run.get_units()
 # iterate over the expansion type of every global
 # detect which global variables form the axes of our parameter space
 independents = []
-both_species = False
-image_order_global_name = None
 for global_name, expansion_type in expansions.items():
-    # This global indicates we want to create separate plots for each species
-    # of atom we image. It should not be used as an axis of the parameter 
-    # space.
-    #
-    # Note: 'central_image_order' is a historical global we keep here for
-    # backwards compatibility with old shot files
-    if global_name in ['image_order', 'central_image_order']:
-        image_order_global_name = global_name
-        both_species = True
-        continue
-
     # This global is not to be used as an axis of the parameter space.
     # We use it to "trick" runmanager into generating multiple identical shots
     # so that we can see the variation of measured quantities
-    elif global_name == 'repeats':
+    if global_name == 'repeats':
         continue
 
     # If the expansion type is a zip group (not "outer")
@@ -279,45 +267,16 @@ def y_vs_auto(df, plot_measurement, independents):
 # The below code calls the above y_vs_auto function
 #
 
-# If we are imaging both species, then group by the image type
-if both_species:
-    # The global "image_order" contains either True or False for imaging
-    # rubidium and potassium respectively
-    # This results in slicing the DataFrame in 2
-    for key, subdf in df.groupby(image_order_global_name):
-        # We extract the list of measurements to plot on the y-axis of graphs 
-        # from a runmanager global that is stored in the DataFrame
-        # The set of meaurements is dependent on the species
-        plot_measurement = subdf["plot_measurement_rb"].values[-1] if key else subdf["plot_measurement_k"].values[-1]
-        # Call y_vs_auto function
-        y_vs_auto(subdf, plot_measurement, independents)
+# The plot_measurement global lists what to plot. It is a different list for
+# absorption and fluorescence imaging (see the Analysis globals group).
+y_vs_auto(df, df["plot_measurement"].values[-1], independents)
 
-# If we are only imaging one species in our sequence
-else:
-    # Check if we are doing a potassium absorption image and use the 
-    # appropriate y-axis values
-    if 'absorption_image_k' in df.columns and df['absorption_image_k'].values[-1]:
-        y_vs_auto(df, df["plot_measurement_k"].values[-1], independents)
-    # Check if we are doing a rubidium absorption image and use the appropriate
-    # y-axis values
-    elif 'absorption_image_rb' in df.columns and df['absorption_image_rb'].values[-1]:
-        y_vs_auto(df, df["plot_measurement_rb"].values[-1], independents)
-        
-    # otherwise we must be doing something else (like a fluorescence image)
-    # so use a separate set of y-axis values
-    else:
-        y_vs_auto(df, df["plot_measurement"].values[-1], independents)
-    
-    
-    # Export rf_a and N_ab from HDF5 files to a csv, for analysis in Matlab
-    if export_to_csv:
-        csv_file = 'csv_file_'+time.strftime("%Y%m%d-%H%M%S")+'.csv'
-        csv_path = 'Z:/Experiments/krb2/BaseExperimentB4B2BRonanSafe/2024/csv_exports/'
-        with open(csv_path+csv_file, 'w') as f:
-        # create the csv writer
-            writer = csv.writer(f)
-                
-            # write a row to the csv file
-            writer.writerow(df['rf_a'].values)
-            #writer.writerow(df['OD_calc','N_ab'].values)
-            writer.writerow(df['fluoro_frame','N'].values)
+# Export N_ab and the fluorescence N to a csv, for analysis in Matlab
+if export_to_csv:
+    csv_file = 'csv_file_' + time.strftime("%Y%m%d-%H%M%S") + '.csv'
+    csv_path = 'Z:/Experiments/krb2/4wavemixing/csv_exports/'
+    os.makedirs(csv_path, exist_ok=True)
+    with open(csv_path + csv_file, 'w', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow(df['OD_calc', 'N_ab'].values)
+        writer.writerow(df['fluoro_frame', 'N'].values)
