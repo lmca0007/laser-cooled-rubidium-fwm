@@ -1,0 +1,45 @@
+### LYSE ERROR
+C:\Users\beclab\labscript-suite\userlib\analysislib\krb2\single_shot\OD_calc.py:80: RuntimeWarning: divide by zero encountered in true_divide
+  OD = (-log(atoms/flat) + (flat-atoms)/Isat)
+C:\Users\beclab\labscript-suite\userlib\analysislib\krb2\single_shot\OD_calc.py:80: RuntimeWarning: invalid value encountered in true_divide
+  OD = (-log(atoms/flat) + (flat-atoms)/Isat)
+C:\Users\beclab\labscript-suite\userlib\analysislib\krb2\single_shot\OD_calc.py:80: RuntimeWarning: divide by zero encountered in log
+  OD = (-log(atoms/flat) + (flat-atoms)/Isat)
+C:\Users\beclab\labscript-suite\userlib\analysislib\krb2\single_shot\OD_calc.py:80: RuntimeWarning: invalid value encountered in log
+  OD = (-log(atoms/flat) + (flat-atoms)/Isat)
+  File "C:\Users\beclab\anaconda3\envs\py38\Lib\site-packages\lyse\analysis_subprocess.py", line 323, in do_analysis
+    exec(code, self.routine_module.__dict__)
+
+  File "C:\Users\beclab\labscript-suite\userlib\analysislib\krb2\single_shot\OD_calc.py", line 87, in <module>
+    imshow(OD,vmin=0,cmap="gray", interpolation="none")
+
+  File "c:\users\beclab\anaconda3\envs\py38\lib\site-packages\matplotlib\pyplot.py", line 2645, in imshow
+    __ret = gca().imshow(
+
+  File "c:\users\beclab\anaconda3\envs\py38\lib\site-packages\matplotlib\__init__.py", line 1565, in inner
+    return func(ax, *map(sanitize_sequence, args), **kwargs)
+
+  File "c:\users\beclab\anaconda3\envs\py38\lib\site-packages\matplotlib\cbook\deprecation.py", line 358, in wrapper
+    return func(*args, **kwargs)
+
+  File "c:\users\beclab\anaconda3\envs\py38\lib\site-packages\matplotlib\cbook\deprecation.py", line 358, in wrapper
+    return func(*args, **kwargs)
+
+  File "c:\users\beclab\anaconda3\envs\py38\lib\site-packages\matplotlib\axes\_axes.py", line 5626, in imshow
+    im.set_data(X)
+
+  File "c:\users\beclab\anaconda3\envs\py38\lib\site-packages\matplotlib\image.py", line 698, in set_data
+    raise TypeError("Invalid shape {} for image data"
+
+TypeError: Invalid shape (1, 1024, 1024) for image data
+
+### BLACS ERROR WHEN INSPECTING BOTTOM CAMERA
+
+Traceback (most recent call last):
+  File "C:\Users\beclab\Anaconda3\envs\py38\lib\site-packages\pyqtgraph\graphicsItems\ImageItem.py", line 439, in paint
+    self.render()
+  File "C:\Users\beclab\Anaconda3\envs\py38\lib\site-packages\pyqtgraph\graphicsItems\ImageItem.py", line 431, in render
+    argb, alpha = fn.makeARGB(image, lut=lut, levels=levels)
+  File "C:\Users\beclab\Anaconda3\envs\py38\lib\site-packages\pyqtgraph\functions.py", line 1066, in makeARGB
+    raise TypeError("data.shape[2] must be <= 4")
+TypeError: data.shape[2] must be <= 4
