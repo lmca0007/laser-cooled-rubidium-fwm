@@ -1,0 +1,366 @@
+<title>FWM Probe Arm</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+/* Layout: one build sheet. Title block, punch-through schematic, parts and steps, then the polarisation figure. */
+:root {
+  --paper: #f6f8fa;
+  --ink: #1b2430;
+  --muted: #5b6878;
+  --rule: #d3dae3;
+  --pump: #c2412d;
+  --probe: #1d6fa5;
+  --signal: #a3266e;
+  --keepout: #8a94a3;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #121820;
+    --ink: #e4e9ef;
+    --muted: #97a3b2;
+    --rule: #2c3643;
+    --pump: #ec6a52;
+    --probe: #5fb0e6;
+    --signal: #e46aae;
+    --keepout: #6f7a89;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #121820;
+  --ink: #e4e9ef;
+  --muted: #97a3b2;
+  --rule: #2c3643;
+  --pump: #ec6a52;
+  --probe: #5fb0e6;
+  --signal: #e46aae;
+  --keepout: #6f7a89;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font: 15px/1.6 var(--font-body);
+  padding-block: 32px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 1040px; margin: 0 auto; display: grid; gap: 44px; }
+header { display: grid; gap: 8px; border-bottom: 1px solid var(--rule); padding-bottom: 20px; }
+.eyebrow { font: 500 12px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font: 600 34px/1.15 var(--font-display); margin: 0; text-wrap: balance; }
+h2 { font: 600 22px/1.2 var(--font-display); margin: 0; text-wrap: balance; }
+p { margin: 0; max-width: 70ch; }
+.lede { color: var(--muted); }
+section { display: grid; gap: 16px; }
+code { font-family: var(--font-mono); font-size: .9em; }
+
+figure { margin: 0; display: grid; gap: 12px; }
+.svgwrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 4px; }
+svg { display: block; width: 100%; min-width: 720px; height: auto; color: var(--ink); }
+figcaption { color: var(--muted); font-size: 13.5px; max-width: 82ch; }
+
+.t { fill: currentColor; font: 12px var(--font-body); }
+.t-s { fill: var(--muted); font: 11px var(--font-body); }
+.t-m { fill: var(--muted); font: 11px var(--font-mono); }
+.t-b { fill: currentColor; font: 600 13px var(--font-body); }
+.halo { paint-order: stroke; stroke: var(--paper); stroke-width: 4px; stroke-linejoin: round; }
+.cell { fill: var(--paper); stroke: currentColor; stroke-width: 1.5; }
+.axis { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 4; fill: none; }
+.pumpband { fill: var(--pump); opacity: .16; }
+.pumpline { stroke: var(--pump); stroke-width: 1.5; fill: none; }
+.pumptxt { fill: var(--pump); font: 600 12px var(--font-body); }
+.probe { stroke: var(--probe); stroke-width: 2.2; fill: none; }
+.probetxt { fill: var(--probe); font: 600 12px var(--font-body); }
+.sig { stroke: var(--signal); stroke-width: 2; stroke-dasharray: 7 4; fill: none; }
+.sigtxt { fill: var(--signal); font: 600 12px var(--font-body); }
+.optic { fill: var(--paper); stroke: currentColor; stroke-width: 1.4; }
+.mirror { stroke: currentColor; stroke-width: 4; stroke-linecap: butt; }
+.dump { fill: currentColor; }
+.pd { fill: var(--paper); stroke: currentColor; stroke-width: 1.4; }
+.ko { fill: url(#hatch); stroke: var(--keepout); stroke-width: 1; }
+.hatchline { stroke: var(--keepout); stroke-width: 1; }
+.atoms { fill: var(--pump); }
+.atoms-glow { fill: var(--pump); opacity: .25; }
+.later { opacity: .38; }
+.later-t { fill: var(--muted); font: italic 11px var(--font-body); }
+.iris { stroke: currentColor; stroke-width: 2.5; }
+
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14px; }
+th, td { text-align: left; padding: 9px 12px 9px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 500 11.5px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+td.num { font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td:first-child { font-family: var(--font-mono); color: var(--muted); width: 2.5em; }
+tr.later-row td { color: var(--muted); }
+
+ol.steps { margin: 0; padding-left: 1.4em; display: grid; gap: 12px; max-width: 78ch; }
+ol.steps li::marker { font-family: var(--font-mono); color: var(--muted); }
+ol.steps b { font-weight: 600; }
+.note { border-left: 3px solid var(--probe); padding: 4px 0 4px 14px; max-width: 78ch; }
+</style>
+
+<main>
+  <header>
+    <span class="eyebrow">krb2 · stage 1 of the FWM probe · Rb-87 D2, 780.24 nm</span>
+    <h1>Punch-through probe at the octagon cell</h1>
+    <p class="lede">The first build sends the 200 mW side-imaging beam through the MOT at 8° to MOT beam 1-5. If the MOT is depleted when the probe is on, the probe overlaps the cloud. Everything placed here stays in the final FWM arm. The faded parts are added in stage 2.</p>
+  </header>
+
+  <figure>
+    <div class="svgwrap">
+    <svg viewBox="0 0 1000 640" role="img" aria-label="Top view of the punch-through setup. The 200 mW beam enters from the left along a line parallel to MOT axis 1-5, passes a half-wave plate and a PBS whose rejected port goes to a beam dump, then a 2 mm iris. M1 folds it up the arm and M2 sends it through the cloud at 8 degrees to the forward MOT beam. After the cell the probe ends in a dump, or on the DET36A to see absorption, before the retro quarter-wave plate. The whole arm sits between MOT axis 1-5 and the face 2-6 side-imaging line, away from the vacuum hardware on faces 4 and 8.">
+      <defs>
+        <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="8" class="hatchline"/>
+        </pattern>
+        <marker id="ap" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" style="fill: var(--probe)"/>
+        </marker>
+        <marker id="as" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" style="fill: var(--signal)"/>
+        </marker>
+        <marker id="am" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" style="fill: var(--pump)"/>
+        </marker>
+        <marker id="ak" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+
+      <!-- frame indicator -->
+      <g transform="translate(34,92)">
+        <line x1="0" y1="0" x2="54" y2="0" stroke="currentColor" stroke-width="1.2" marker-end="url(#ak)"/>
+        <line x1="0" y1="0" x2="0" y2="-54" stroke="currentColor" stroke-width="1.2" marker-end="url(#ak)"/>
+        <text x="60" y="4" class="t-m">+x (1→5)</text>
+        <text x="-4" y="-62" class="t-m">+y (3→7)</text>
+      </g>
+
+      <!-- vacuum keep-out along faces 4/8 -->
+      <polygon class="ko" points="475.3,178.7 278.3,-18.3 221.7,38.3 418.7,235.3"/>
+      <polygon class="ko" points="581.3,284.7 978.3,681.7 921.7,738.3 524.7,341.3"/>
+      <text x="300" y="54" class="t-s halo" transform="rotate(45 300 54)">vacuum: face 8 seal → main chamber</text>
+      <text x="690" y="446" class="t-s halo" transform="rotate(45 690 446)">vacuum: face 4 seal → bellows, gate valve</text>
+
+      <!-- side-imaging sightline 2/6 and MOT axis 3-7 -->
+      <line x1="500" y1="260" x2="130" y2="630" class="axis"/>
+      <line x1="500" y1="260" x2="750" y2="10" class="axis"/>
+      <text x="660" y="80" class="t-s halo" transform="rotate(-45 660 80)">side-imaging axis, face 6</text>
+      <text x="196" y="586" class="t-s halo" transform="rotate(-45 196 586)">side-imaging axis, face 2</text>
+      <line x1="500" y1="20" x2="500" y2="198" class="axis"/>
+      <line x1="500" y1="322" x2="500" y2="630" class="axis"/>
+      <text x="508" y="34" class="t-s">MOT axis 3-7</text>
+
+      <!-- MOT beam 1-5 (pumps) -->
+      <rect x="40" y="247" width="830" height="26" class="pumpband"/>
+      <line x1="40" y1="247" x2="870" y2="247" class="pumpline" opacity=".5"/>
+      <line x1="40" y1="273" x2="870" y2="273" class="pumpline" opacity=".5"/>
+      <line x1="56" y1="238" x2="120" y2="238" class="pumpline" marker-end="url(#am)"/>
+      <text x="40" y="228" class="pumptxt">F  forward MOT beam (25 mW)</text>
+      <line x1="740" y1="284" x2="676" y2="284" class="pumpline" marker-end="url(#am)"/>
+      <text x="660" y="300" class="pumptxt">B  retro</text>
+      <rect x="140" y="240" width="9" height="40" class="optic"/>
+      <text x="126" y="320" class="t-s">λ/4 MOT in</text>
+      <rect x="820" y="240" width="9" height="40" class="optic"/>
+      <line x1="866" y1="236" x2="866" y2="284" class="mirror"/>
+      <text x="800" y="320" class="t-s">λ/4 + retro mirror</text>
+
+      <!-- cell -->
+      <polygon class="cell" points="562.0,234.3 525.7,198.0 474.3,198.0 438.0,234.3 438.0,285.7 474.3,322.0 525.7,322.0 562.0,285.7"/>
+      <rect x="438" y="247" width="124" height="26" class="pumpband"/>
+      <g class="t-m">
+        <text x="452" y="257" text-anchor="middle">1</text>
+        <text x="468" y="300" text-anchor="middle">2</text>
+        <text x="500" y="314" text-anchor="middle">3</text>
+        <text x="532" y="300" text-anchor="middle">4</text>
+        <text x="548" y="257" text-anchor="middle">5</text>
+        <text x="532" y="224" text-anchor="middle">6</text>
+        <text x="500" y="210" text-anchor="middle">7</text>
+        <text x="468" y="224" text-anchor="middle">8</text>
+      </g>
+
+      <!-- horizontal leg: 200 mW in, HWP, PBS, iris -->
+      <line x1="20" y1="480" x2="206" y2="480" class="probe" marker-end="url(#ap)"/>
+      <text x="20" y="466" class="probetxt">200 mW in</text>
+      <text x="20" y="504" class="t-m">imaging_push_aom</text>
+      <text x="20" y="518" class="t-m">side_imaging_shutter</text>
+      <rect x="62" y="464" width="7" height="32" class="optic"/>
+      <text x="66" y="456" class="t-s" text-anchor="middle">λ/2</text>
+      <rect x="88" y="466" width="28" height="28" class="optic"/>
+      <line x1="88" y1="494" x2="116" y2="466" stroke="currentColor" stroke-width="1.2"/>
+      <text x="102" y="456" class="t-s" text-anchor="middle">PBS</text>
+      <line x1="102" y1="494" x2="102" y2="540" class="probe" opacity=".55"/>
+      <rect x="94" y="540" width="16" height="16" class="dump"/>
+      <text x="118" y="552" class="t-s">dump, ≥200 mW</text>
+      <line x1="146" y1="466" x2="146" y2="475" class="iris"/>
+      <line x1="146" y1="485" x2="146" y2="494" class="iris"/>
+      <text x="146" y="456" class="t-s" text-anchor="middle">iris 2 mm</text>
+
+      <!-- M1 -->
+      <line x1="198" y1="492" x2="222" y2="468" class="mirror"/>
+      <text x="230" y="498" class="t-b">M1</text>
+      <text x="230" y="512" class="later-t">stage 2: glass plate</text>
+
+      <!-- stage-2 ghost: DET36A behind the plate, iris, plate transmission dump, waveplates -->
+      <g class="later">
+        <line x1="210" y1="480" x2="246" y2="480" class="probe"/>
+        <rect x="246" y="473" width="14" height="14" class="dump"/>
+        <line x1="203" y1="508" x2="203" y2="514" class="iris"/>
+        <line x1="217" y1="508" x2="217" y2="514" class="iris"/>
+        <rect x="198" y="522" width="24" height="24" class="pd"/>
+        <rect x="194" y="418" width="32" height="7" class="optic"/>
+        <rect x="194" y="394" width="32" height="7" class="optic"/>
+      </g>
+      <text x="230" y="540" class="later-t">DET36A, 1 MΩ</text>
+      <text x="184" y="425" class="later-t" text-anchor="end">λ/2</text>
+      <text x="184" y="401" class="later-t" text-anchor="end">λ/4</text>
+
+      <!-- arm -->
+      <line x1="210" y1="480" x2="210" y2="300" class="probe"/>
+      <line x1="210" y1="370" x2="210" y2="340" class="probe" marker-end="url(#ap)"/>
+
+      <!-- M2 -->
+      <line x1="197" y1="309" x2="223" y2="291" class="mirror"/>
+      <text x="184" y="300" class="t-b" text-anchor="end">M2</text>
+      <text x="184" y="315" class="t-s" text-anchor="end">½″, clear of MOT beam</text>
+
+      <!-- probe through cloud -->
+      <line x1="210" y1="300" x2="500" y2="260" class="probe"/>
+      <line x1="500" y1="260" x2="772" y2="222.5" class="probe"/>
+      <line x1="300" y1="287.6" x2="352" y2="280.4" class="probe" marker-end="url(#ap)"/>
+      <text x="300" y="306" class="probetxt halo">P  probe, 8° to F</text>
+      <rect x="774" y="214" width="14" height="14" class="dump"/>
+      <text x="680" y="204" class="t-s">dump, or DET36A (100 kΩ)</text>
+
+      <!-- stage-2 ghost: conjugate back down the arm -->
+      <g class="later">
+        <line x1="492" y1="268" x2="222" y2="305" class="sig" marker-end="url(#as)"/>
+        <line x1="216" y1="310" x2="216" y2="514" class="sig"/>
+      </g>
+      <text x="300" y="338" class="later-t halo">stage 2: FWM signal retraces the probe</text>
+
+      <!-- atoms -->
+      <circle cx="500" cy="260" r="15" class="atoms-glow"/>
+      <circle cx="500" cy="260" r="6" class="atoms"/>
+
+      <!-- legend -->
+      <g transform="translate(620,520)">
+        <rect x="0" y="-6" width="28" height="12" class="pumpband"/>
+        <text x="38" y="4" class="t">MOT beam 1-5</text>
+        <line x1="0" y1="24" x2="28" y2="24" class="probe"/>
+        <text x="38" y="28" class="t">probe (stage 1)</text>
+        <line x1="0" y1="48" x2="28" y2="48" class="sig" opacity=".5"/>
+        <text x="38" y="52" class="t">stage 2 parts (faded)</text>
+        <rect x="0" y="64" width="28" height="14" class="ko"/>
+        <text x="38" y="76" class="t">vacuum keep-out</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>Schematic, not to scale except the 8° angle. The arm sits in the wedge between MOT axis 1-5 and the face 2-6 side-imaging line, so it doesn't cross the vacuum hardware on faces 4 and 8 or the camera sightline. Bring the 200 mW beam in along the lower leg, parallel to axis 1-5.</figcaption>
+  </figure>
+
+  <section>
+    <h2>Parts</h2>
+    <p class="lede">Table frame of <code>optics/fwm_probe/geometry.py</code>: cloud at the origin, +x along 1→5, +y along 3→7, in mm. The positions are suggestions; move them to suit the table, but keep each optic inside the wedge.</p>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>#</th><th>Part</th><th>Position</th><th>Setting and purpose</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>λ/2 + PBS</td><td class="num">leg at y = −200</td><td>Power control. Set the transmitted port to 1 mW to start. The PBS limits the minimum to about 0.2 mW, which is enough for this test. The reject port carries almost 200 mW and needs a dump rated for it.</td></tr>
+        <tr><td>2</td><td>Iris, about 2 mm</td><td class="num">leg at y = −200</td><td>Cuts the old side-imaging beam down to a pencil beam. A wide beam empties the whole MOT however it is aligned, so it tells you nothing about overlap.</td></tr>
+        <tr><td>3</td><td>M1</td><td class="num">(−280, −200)</td><td>Folds the beam up the arm. M1 and M2 together set position and angle at the cloud.</td></tr>
+        <tr><td>4</td><td>M2, ½″ mirror</td><td class="num">(−280, −39.4)</td><td>About 49° angle of incidence. At 8° the mirror centre is 39 mm from the MOT beam axis, so a standard ½″ mount clears the 12.7 mm beam edge. Check with a card that the mount doesn't clip the MOT beam. At 4° you would need a D-mirror.</td></tr>
+        <tr><td>5</td><td>Dump or DET36A/M</td><td class="num">(+280, +39.4)</td><td>Stops the transmitted probe before the retro λ/4. If you put the DET36A/M here with a 100 kΩ load (about 50 mV/µW), you can see the MOT absorb a weak probe.</td></tr>
+        <tr class="later-row"><td>6</td><td>Stage 2: glass plate in place of M1</td><td class="num">(−280, −200)</td><td>An uncoated or wedged window at 45°, s-polarised. It reflects about 9% of the probe up the arm and transmits about 80% of the returning signal to the DET36A/M behind it (1 MΩ load, iris in front).</td></tr>
+        <tr class="later-row"><td>7</td><td>Stage 2: λ/2, λ/4</td><td class="num">on the arm</td><td>Make the probe circular with σ opposite to F. No lens: the 2 mm beam already roughly matches the cloud.</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="note"><b>Intensities.</b> 1 mW in a 2 mm beam is about 64 mW/cm². That is about 5 times the intensity of one 25 mW MOT beam and gives a strong push. The PBS minimum of 0.2 mW is about equal to one MOT beam.</p>
+  </section>
+
+  <section>
+    <h2>Procedure</h2>
+    <ol class="steps">
+      <li><b>Block the beam and put on goggles.</b> 200 mW at 780 nm is class 3B and invisible. Set the λ/2 so the PBS transmits 1 mW, measured with a power meter.</li>
+      <li><b>Set the height.</b> Iris the beam to about 2 mm. Use M1 and M2 to bring it level at the height of the MOT beam centre, checked at two points along the arm.</li>
+      <li><b>Aim through the cell centre.</b> At 8° the probe passes 6.8 mm from the MOT beam centre at face 1 and 6.8 mm on the other side at face 5, at the same height. Equal offsets on both faces mean it crosses the cloud. Check with a card.</li>
+      <li><b>Dump the exit beam</b> at about (+280, +39), before the retro λ/4. Check that nothing goes back into the retro optics.</li>
+      <li><b>Open the probe during the load.</b> During the load <code>imaging_push_aom</code> is already on at the push frequency, which is near resonance, so opening <code>side_imaging_shutter</code> for the last 0.5–1 s of the load sends near-resonant light into the MOT. This needs a small sequence change. Alternate shots with the probe on and off, and compare the side fluorescence images.</li>
+      <li><b>Search, then refine.</b> If the MOT is unchanged, step M2 in small raster steps and raise the power. Once the MOT shrinks or moves, lower the power until it is only partly depleted. Then walk M1 and M2 for the largest depletion. That centres the probe on the cloud.</li>
+      <li><b>Optional absorption check.</b> With the DET36A/M at the exit, a weak probe of a few µW shows a dip when the MOT is present. This confirms the overlap on a single detector, without the camera.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Why a λ/4 and PBS can't pick off the conjugate</h2>
+    <figure>
+      <div class="svgwrap">
+      <svg viewBox="0 0 1000 300" role="img" aria-label="Two rows compare an ordinary mirror with a phase conjugator, both after a PBS and a quarter-wave plate. Horizontal light leaves the PBS and becomes sigma plus about +x after the plate. A mirror returns sigma plus about +x with the opposite helicity; the plate turns it vertical and the PBS reflects it out of the side port. The phase conjugate returns sigma minus about +x with the same helicity; the plate turns it back to horizontal and the PBS transmits it back toward the laser.">
+        <defs>
+          <marker id="ap2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" style="fill: var(--probe)"/>
+          </marker>
+          <marker id="as2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" style="fill: var(--signal)"/>
+          </marker>
+          <marker id="ak2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+          </marker>
+        </defs>
+
+        <!-- row A: mirror -->
+        <text x="20" y="34" class="t-b">Ordinary reflection (mirror, window, lens)</text>
+        <line x1="40" y1="80" x2="210" y2="80" class="probe" marker-end="url(#ap2)"/>
+        <text x="40" y="70" class="t-s">from laser</text>
+        <rect x="216" y="64" width="32" height="32" class="optic"/>
+        <line x1="216" y1="96" x2="248" y2="64" stroke="currentColor" stroke-width="1.2"/>
+        <text x="232" y="56" class="t-s" text-anchor="middle">PBS</text>
+        <line x1="248" y1="80" x2="420" y2="80" class="probe" marker-end="url(#ap2)"/>
+        <text x="334" y="70" class="t-m" text-anchor="middle">H</text>
+        <rect x="424" y="62" width="8" height="36" class="optic"/>
+        <text x="428" y="56" class="t-s" text-anchor="middle">λ/4</text>
+        <line x1="432" y1="80" x2="760" y2="80" class="probe" marker-end="url(#ap2)"/>
+        <text x="596" y="70" class="t-m" text-anchor="middle">σ+ about +x</text>
+        <line x1="770" y1="60" x2="770" y2="100" class="mirror"/>
+        <text x="782" y="84" class="t">mirror</text>
+        <line x1="760" y1="92" x2="436" y2="92" class="sig" marker-end="url(#as2)"/>
+        <text x="596" y="110" class="t-m" text-anchor="middle">σ+ about +x · helicity flipped</text>
+        <line x1="420" y1="92" x2="240" y2="92" class="sig"/>
+        <text x="334" y="110" class="t-m" text-anchor="middle">V</text>
+        <line x1="232" y1="92" x2="232" y2="140" class="sig" marker-end="url(#as2)"/>
+        <text x="244" y="140" class="t">exits the PBS side port: separated</text>
+
+        <!-- row B: phase conjugate -->
+        <text x="20" y="184" class="t-b">Phase conjugate (FWM in the atoms)</text>
+        <line x1="40" y1="230" x2="210" y2="230" class="probe" marker-end="url(#ap2)"/>
+        <text x="40" y="220" class="t-s">from laser</text>
+        <rect x="216" y="214" width="32" height="32" class="optic"/>
+        <line x1="216" y1="246" x2="248" y2="214" stroke="currentColor" stroke-width="1.2"/>
+        <text x="232" y="206" class="t-s" text-anchor="middle">PBS</text>
+        <line x1="248" y1="230" x2="420" y2="230" class="probe" marker-end="url(#ap2)"/>
+        <text x="334" y="220" class="t-m" text-anchor="middle">H</text>
+        <rect x="424" y="212" width="8" height="36" class="optic"/>
+        <text x="428" y="206" class="t-s" text-anchor="middle">λ/4</text>
+        <line x1="432" y1="230" x2="760" y2="230" class="probe" marker-end="url(#ap2)"/>
+        <text x="596" y="220" class="t-m" text-anchor="middle">σ+ about +x</text>
+        <circle cx="776" cy="236" r="12" class="atoms-glow"/>
+        <circle cx="776" cy="236" r="5" class="atoms"/>
+        <text x="798" y="240" class="t">atoms + pumps F, B</text>
+        <line x1="760" y1="242" x2="436" y2="242" class="sig" marker-end="url(#as2)"/>
+        <text x="596" y="260" class="t-m" text-anchor="middle">σ− about +x · same helicity</text>
+        <line x1="420" y1="242" x2="40" y2="242" class="sig" marker-end="url(#as2)"/>
+        <text x="334" y="260" class="t-m" text-anchor="middle">H again</text>
+        <text x="40" y="276" class="t">passes the PBS back toward the laser: not separated</text>
+      </svg>
+      </div>
+      <figcaption>A λ/4 converts by helicity, which is measured relative to each beam's own direction of travel. The conjugate is σ− about the fixed +x axis, as you expected, but it travels in −x, so its helicity matches the probe's. The λ/4 turns it back into the probe's original linear state. A mirror does the opposite: it keeps σ+ about +x and flips the helicity. That is why the λ/4 + PBS trick removes ordinary back-reflections but returns the conjugate toward the laser.</figcaption>
+    </figure>
+  </section>
+</main>
