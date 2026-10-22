@@ -192,5 +192,7 @@ The DET36A/M has no amplifier. It gives about 0.5 A/W at 780 nm and has about 40
 | File | Contents |
 |---|---|
 | `mot_comparison.py` / `.csv` | Brightness, centre, size and photodiode levels for 0055–0063 from the reduced data |
-| `punch_through_probe.html` | Build sheet: diagram, parts, procedure, polarisation figure |
+| `punch_through_probe.html` | Stage 1 build sheet: punch-through diagram, parts, procedure, polarisation figure |
+| `probe_arm_pbs_pickoff.html` | Stage 2 build sheet: two-PBS pick-off, unfolded beam path with polarisation states, table placement, alignment |
+| `far_side_photodiode.html` | Far-side photodiode: why the conjugate never reaches it, what it measures, comparison with the pick-off |
 | [data/2026-10-22](../../data/2026-10-22) | Reduced copies of all 851 shots from the day (see [data/README.md](../../data/README.md)) |

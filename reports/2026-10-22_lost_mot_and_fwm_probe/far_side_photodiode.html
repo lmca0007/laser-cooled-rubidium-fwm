@@ -1,0 +1,328 @@
+<title>Far-side Probe Detector</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+/* Layout: a build sheet. Title block with the verdict, k-vector figure (why the conjugate never arrives), table placement, what it measures, comparison, steps. */
+:root {
+  --paper: #f4f6f8;
+  --plate: #e9edf1;
+  --ink: #18212b;
+  --muted: #586575;
+  --rule: #cfd7e0;
+  --grid: #c3ccd6;
+  --pump: #c2412d;
+  --probe: #1b6aa0;
+  --signal: #a1236a;
+  --keepout: #8a94a3;
+  --font-display: "IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #10161d;
+    --plate: #161e27;
+    --ink: #e3e9ef;
+    --muted: #94a1b0;
+    --rule: #29333f;
+    --grid: #2c3743;
+    --pump: #ee6b53;
+    --probe: #5db0e8;
+    --signal: #e86cb2;
+    --keepout: #6b7686;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #10161d;
+  --plate: #161e27;
+  --ink: #e3e9ef;
+  --muted: #94a1b0;
+  --rule: #29333f;
+  --grid: #2c3743;
+  --pump: #ee6b53;
+  --probe: #5db0e8;
+  --signal: #e86cb2;
+  --keepout: #6b7686;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font: 15px/1.6 var(--font-body);
+  padding-block: 36px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 1120px; margin: 0 auto; display: grid; gap: 52px; }
+header { display: grid; gap: 10px; }
+.eyebrow { font: 500 12px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font: 700 40px/1.08 var(--font-display); margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+h2 { font: 600 23px/1.2 var(--font-display); margin: 0; text-wrap: balance; }
+p { margin: 0; max-width: 72ch; }
+.lede { color: var(--muted); font-size: 16px; }
+section { display: grid; gap: 16px; }
+code { font-family: var(--font-mono); font-size: .88em; }
+.verdict { border-left: 3px solid var(--probe); padding: 6px 0 6px 16px; max-width: 78ch; display: grid; gap: 6px; }
+.verdict b { font-weight: 600; }
+
+figure { margin: 0; display: grid; gap: 12px; }
+.svgwrap { overflow-x: auto; background: var(--plate); border-radius: 6px; }
+svg { display: block; width: 100%; height: auto; color: var(--ink); }
+svg.wide { min-width: 760px; }
+svg.small { min-width: 560px; }
+figcaption { color: var(--muted); font-size: 13.5px; max-width: 86ch; }
+
+.t { fill: currentColor; font: 12px var(--font-body); }
+.t-s { fill: var(--muted); font: 11px var(--font-body); }
+.t-m { fill: var(--muted); font: 11px var(--font-mono); }
+.t-b { fill: currentColor; font: 600 12.5px var(--font-body); }
+.t-h { fill: currentColor; font: 600 13px var(--font-display); letter-spacing: .02em; }
+.halo { paint-order: stroke; stroke: var(--plate); stroke-width: 4px; stroke-linejoin: round; }
+.hole { fill: var(--grid); }
+.cell { fill: var(--plate); stroke: currentColor; stroke-width: 1.5; }
+.axis { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 4; fill: none; }
+.pumpband { fill: var(--pump); opacity: .15; }
+.pumpline { stroke: var(--pump); stroke-width: 1.5; fill: none; }
+.pumpvec { stroke: var(--pump); stroke-width: 2.4; fill: none; }
+.pumptxt { fill: var(--pump); font: 600 12px var(--font-body); }
+.probe { stroke: var(--probe); stroke-width: 2.2; fill: none; }
+.probevec { stroke: var(--probe); stroke-width: 2.4; fill: none; }
+.glow { stroke: var(--probe); stroke-width: 8; opacity: .14; fill: none; stroke-linecap: round; }
+.probetxt { fill: var(--probe); font: 600 12px var(--font-body); }
+.sig { stroke: var(--signal); stroke-width: 2.2; stroke-dasharray: 7 4; fill: none; }
+.sigtxt { fill: var(--signal); font: 600 12px var(--font-body); }
+.weak { stroke: var(--muted); stroke-width: 1.6; stroke-dasharray: 2 4; fill: none; }
+.optic { fill: var(--paper); stroke: currentColor; stroke-width: 1.4; }
+.nd { fill: var(--muted); opacity: .6; stroke: currentColor; stroke-width: 1.2; }
+.cube { fill: var(--paper); stroke: currentColor; stroke-width: 1.5; }
+.cube-d { stroke: currentColor; stroke-width: 1.2; }
+.mirror { stroke: currentColor; stroke-width: 4; stroke-linecap: butt; }
+.dump { fill: currentColor; }
+.pd { fill: var(--paper); stroke: currentColor; stroke-width: 1.5; }
+.pd-key { fill: var(--paper); stroke: var(--probe); stroke-width: 2.2; }
+.ko { fill: url(#hatch); stroke: var(--keepout); stroke-width: 1; }
+.hatchline { stroke: var(--keepout); stroke-width: 1; }
+.atoms { fill: var(--pump); }
+.atoms-glow { fill: var(--pump); opacity: .25; }
+.iris { stroke: currentColor; stroke-width: 2.5; }
+.faint { opacity: .4; }
+
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 680px; font-size: 14px; }
+th, td { text-align: left; padding: 10px 14px 10px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 500 11.5px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+td.num { font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+td.row { font-weight: 600; white-space: nowrap; }
+
+ol.steps { margin: 0; padding-left: 1.4em; display: grid; gap: 12px; max-width: 78ch; }
+ol.steps li::marker { font-family: var(--font-mono); color: var(--muted); }
+b { font-weight: 600; }
+</style>
+
+<main>
+  <header>
+    <span class="eyebrow">krb2 · backward degenerate FWM · Rb-87 D2, 780.24 nm · far-side detector</span>
+    <h1>A photodiode on the far side of the cell</h1>
+    <p class="lede">The probe leaves the cell on the side opposite the arm, 39 mm off the MOT beam axis at the retro optics. A pick-off mirror and a photodiode there are the cheapest addition to the punch-through arm. This sheet covers what that detector sees and what it can't.</p>
+    <div class="verdict">
+      <p><b>It doesn't make the conjugate easier to separate, because the conjugate never gets there.</b> With counter-propagating pumps, phase matching sends the conjugate exactly back along the probe. The far side sees only the transmitted probe.</p>
+      <p><b>It is still worth building, and building first.</b> It is easy to align, it measures the cloud's optical depth along the probe, and it records the pump–probe spectrum, which comes from the same χ(3) process. Four-wave mixing shows up there as a small gain on the probe. Proof of the conjugate still needs the backward pick-off on the arm.</p>
+    </div>
+  </header>
+
+  <figure>
+    <div class="svgwrap">
+    <svg class="small" viewBox="0 0 760 300" role="img" aria-label="Wave-vector diagram at the cloud. The forward pump k_F points right and the backward pump k_B points left. The probe k_p points right and up at 8 degrees. The phase-conjugate k_c equals k_F plus k_B minus k_p, which is minus k_p, so it points back down-left toward the arm. On the far side only the transmitted probe leaves. The forward mixing direction 2k_F minus k_p, at minus 8 degrees, has a wave-vector longer than k and is phase-mismatched.">
+      <defs>
+        <marker id="vp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill: var(--probe)"/></marker>
+        <marker id="vs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill: var(--signal)"/></marker>
+        <marker id="vm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill: var(--pump)"/></marker>
+        <marker id="vk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill: var(--muted)"/></marker>
+      </defs>
+      <text x="24" y="30" class="t-h">ARM SIDE</text>
+      <text x="736" y="30" class="t-h" text-anchor="end">FAR SIDE</text>
+      <line x1="380" y1="44" x2="380" y2="272" class="axis"/>
+      <text x="388" y="286" class="t-s">cloud</text>
+
+      <line x1="380" y1="150" x2="560" y2="150" class="pumpvec" marker-end="url(#vm)"/>
+      <text x="566" y="154" class="pumptxt">k_F</text>
+      <line x1="380" y1="150" x2="200" y2="150" class="pumpvec" marker-end="url(#vm)"/>
+      <text x="172" y="154" class="pumptxt">k_B</text>
+
+      <line x1="380" y1="150" x2="558.2" y2="125" class="probevec" marker-end="url(#vp)"/>
+      <text x="566" y="122" class="probetxt">k_p  probe, transmitted</text>
+      <line x1="380" y1="150" x2="201.8" y2="175" class="sig" marker-end="url(#vs)"/>
+      <text x="24" y="192" class="sigtxt">k_c = k_F + k_B − k_p = −k_p</text>
+      <text x="24" y="208" class="t-s">conjugate: back along the probe, into the arm</text>
+
+      <line x1="380" y1="150" x2="561.8" y2="175.5" class="weak" marker-end="url(#vk)"/>
+      <text x="566" y="182" class="t-m">2k_F − k_p</text>
+      <text x="470" y="204" class="t-s">|2k_F − k_p| ≈ k(1 + θ²): mismatched</text>
+      <text x="470" y="219" class="t-s">kθ²L ≈ 150 rad for a 1 mm cloud</text>
+
+      <path d="M470,150 A90,90 0 0,0 469.1,137.5" class="axis" style="stroke-dasharray: none"/>
+      <text x="482" y="147" class="t-m">8°</text>
+    </svg>
+    </div>
+    <figcaption>Phase matching at the cloud. The conjugate's wave-vector is fixed at −k_p for any probe angle, so it leaves on the arm side. The only far-side mixing direction, 2k_F − k_p, is too long by kθ² and averages out over the cloud.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="svgwrap">
+    <svg class="wide" viewBox="0 0 1000 640" role="img" aria-label="Top view. The punch-through arm sends the probe through the cloud at 8 degrees to MOT beam 1-5. On the far side, before the retro quarter-wave plate, a half-inch mirror M3 folds the transmitted probe upward through a lens and an iris onto the DET36A at 100 kilohms. PD ref on PBS B normalises the probe power. PBS A's fourth port, which is used for the conjugate, is shown faded.">
+      <defs>
+        <pattern id="holes" width="25" height="25" patternUnits="userSpaceOnUse"><circle cx="12.5" cy="12.5" r="1.4" class="hole"/></pattern>
+        <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" class="hatchline"/></pattern>
+        <marker id="ap2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill: var(--probe)"/></marker>
+        <marker id="am2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill: var(--pump)"/></marker>
+        <marker id="ak2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+      </defs>
+      <rect x="0" y="0" width="1000" height="640" fill="url(#holes)"/>
+
+      <g transform="translate(34,92)">
+        <line x1="0" y1="0" x2="54" y2="0" stroke="currentColor" stroke-width="1.2" marker-end="url(#ak2)"/>
+        <line x1="0" y1="0" x2="0" y2="-54" stroke="currentColor" stroke-width="1.2" marker-end="url(#ak2)"/>
+        <text x="60" y="4" class="t-m">+x (1→5)</text>
+        <text x="-4" y="-62" class="t-m">+y (3→7)</text>
+      </g>
+
+      <polygon class="ko" points="475.3,178.7 278.3,-18.3 221.7,38.3 418.7,235.3"/>
+      <polygon class="ko" points="581.3,284.7 978.3,681.7 921.7,738.3 524.7,341.3"/>
+      <text x="300" y="54" class="t-s halo" transform="rotate(45 300 54)">vacuum: face 8 seal → main chamber</text>
+      <text x="690" y="446" class="t-s halo" transform="rotate(45 690 446)">vacuum: face 4 seal → bellows, gate valve</text>
+
+      <line x1="500" y1="260" x2="130" y2="630" class="axis"/>
+      <line x1="500" y1="260" x2="750" y2="10" class="axis"/>
+      <text x="166" y="618" class="t-s halo" transform="rotate(-45 166 618)">side-imaging axis, face 2</text>
+      <line x1="500" y1="20" x2="500" y2="198" class="axis"/>
+      <line x1="500" y1="322" x2="500" y2="630" class="axis"/>
+      <text x="508" y="34" class="t-s halo">MOT axis 3-7</text>
+
+      <rect x="40" y="247" width="830" height="26" class="pumpband"/>
+      <line x1="56" y1="238" x2="120" y2="238" class="pumpline" marker-end="url(#am2)"/>
+      <text x="40" y="228" class="pumptxt halo">F  forward MOT beam</text>
+      <line x1="740" y1="284" x2="676" y2="284" class="pumpline" marker-end="url(#am2)"/>
+      <text x="660" y="300" class="pumptxt halo">B  retro</text>
+      <rect x="140" y="240" width="9" height="40" class="optic"/>
+      <rect x="820" y="240" width="9" height="40" class="optic"/>
+      <line x1="866" y1="236" x2="866" y2="284" class="mirror"/>
+      <text x="800" y="320" class="t-s halo">λ/4 + retro mirror</text>
+
+      <polygon class="cell" points="562.0,234.3 525.7,198.0 474.3,198.0 438.0,234.3 438.0,285.7 474.3,322.0 525.7,322.0 562.0,285.7"/>
+      <rect x="438" y="247" width="124" height="26" class="pumpband"/>
+      <g class="t-m">
+        <text x="452" y="257" text-anchor="middle">1</text><text x="468" y="300" text-anchor="middle">2</text>
+        <text x="500" y="314" text-anchor="middle">3</text><text x="532" y="300" text-anchor="middle">4</text>
+        <text x="548" y="257" text-anchor="middle">5</text><text x="532" y="224" text-anchor="middle">6</text>
+        <text x="500" y="210" text-anchor="middle">7</text><text x="468" y="224" text-anchor="middle">8</text>
+      </g>
+
+      <!-- arm (as on the pick-off sheet) -->
+      <line x1="16" y1="480" x2="206" y2="480" class="probe"/>
+      <text x="16" y="508" class="probetxt halo">200 mW</text>
+      <rect x="36" y="466" width="6" height="28" class="optic"/>
+      <rect x="58" y="466" width="7" height="28" class="nd"/>
+      <rect x="88" y="468" width="24" height="24" class="cube"/>
+      <line x1="88" y1="492" x2="112" y2="468" class="cube-d"/>
+      <line x1="100" y1="468" x2="100" y2="430" class="probe faint"/>
+      <rect x="93" y="416" width="14" height="14" class="dump"/>
+      <text x="100" y="408" class="t-b halo" text-anchor="middle">PBS A</text>
+      <g class="faint">
+        <line x1="106" y1="492" x2="106" y2="552" class="sig"/>
+        <rect x="94" y="556" width="24" height="18" rx="3" class="pd"/>
+      </g>
+      <text x="124" y="570" class="t-s halo">PD FWM</text>
+      <rect x="137" y="466" width="6" height="28" class="optic"/>
+      <text x="62" y="458" class="t-s halo" text-anchor="middle">λ/2 · ND</text>
+      <text x="140" y="458" class="t-s halo" text-anchor="middle">λ/2</text>
+      <line x1="198" y1="492" x2="222" y2="468" class="mirror"/>
+      <text x="230" y="498" class="t-b halo">M1</text>
+      <line x1="210" y1="480" x2="210" y2="300" class="probe"/>
+      <rect x="198" y="418" width="24" height="24" class="cube"/>
+      <line x1="198" y1="442" x2="222" y2="418" class="cube-d"/>
+      <line x1="222" y1="430" x2="256" y2="430" class="probe"/>
+      <rect x="258" y="421" width="24" height="18" rx="3" class="pd"/>
+      <text x="288" y="434" class="t-b halo">PD ref</text>
+      <text x="190" y="414" class="t-b halo" text-anchor="end">PBS B</text>
+      <line x1="203" y1="392" x2="203" y2="398" class="iris"/>
+      <line x1="217" y1="392" x2="217" y2="398" class="iris"/>
+      <rect x="194" y="360" width="32" height="7" class="optic"/>
+      <text x="190" y="368" class="t-s halo" text-anchor="end">iris · λ/4</text>
+      <line x1="197" y1="309" x2="223" y2="291" class="mirror"/>
+      <text x="190" y="300" class="t-b halo" text-anchor="end">M2</text>
+
+      <!-- probe through the cloud to M3 -->
+      <line x1="210" y1="300" x2="760" y2="224.1" class="glow"/>
+      <line x1="210" y1="300" x2="760" y2="224.1" class="probe"/>
+      <line x1="300" y1="287.6" x2="352" y2="280.4" class="probe" marker-end="url(#ap2)"/>
+      <line x1="620" y1="243.4" x2="672" y2="236.2" class="probe" marker-end="url(#ap2)"/>
+      <circle cx="500" cy="260" r="15" class="atoms-glow"/>
+      <circle cx="500" cy="260" r="6" class="atoms"/>
+
+      <!-- far-side detector -->
+      <line x1="750" y1="235.6" x2="770" y2="212.4" class="mirror"/>
+      <text x="778" y="232" class="t-b halo">M3 ½″</text>
+      <line x1="760" y1="224" x2="760" y2="110" class="glow"/>
+      <line x1="760" y1="224" x2="760" y2="112" class="probe" marker-end="url(#ap2)"/>
+      <ellipse cx="760" cy="180" rx="16" ry="4" class="optic"/>
+      <text x="782" y="184" class="t-s halo">lens f ≈ 100 mm</text>
+      <line x1="749" y1="144" x2="755" y2="144" class="iris"/>
+      <line x1="765" y1="144" x2="771" y2="144" class="iris"/>
+      <text x="782" y="148" class="t-s halo">iris at the focus</text>
+      <rect x="746" y="90" width="28" height="20" rx="3" class="pd-key"/>
+      <text x="782" y="98" class="probetxt halo">PD trans</text>
+      <text x="782" y="113" class="t-m halo">DET36A · 100 kΩ</text>
+    </svg>
+    </div>
+    <figcaption>Schematic, not to scale except the 8° angle; the dots mark breadboard holes on a 25 mm pitch. M3 sits at about (+280, +39) mm in the table frame of <code>geometry.py</code>, before the retro λ/4. There, the probe is 39 mm off the MOT beam axis and 26 mm clear of its edge, so a ½″ mirror and mount fit without clipping the retro beam. The arm is the same as on the pick-off sheet; PBS A's detector port (faded) is only needed for the conjugate.</figcaption>
+  </figure>
+
+  <section>
+    <h2>What the far-side detector measures</h2>
+    <p>With a 10 µW probe on the DET36A/M at 100 kΩ (about 50 mV/µW, about 40 kHz), the photodiode reads about 0.5 V before any atoms. Divide by PD ref in every sample: drifts in the probe power are larger than the four-wave-mixing signal.</p>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th>Measurement</th><th>Probe frequency</th><th>Expected size at 10 µW</th><th>Tells you</th></tr></thead>
+      <tbody>
+        <tr><td class="row">Absorption</td><td class="num">≈ 90 MHz (resonance)</td><td class="num">T = e^(−OD); OD 0.1–1 removes 1–6 µW</td><td>Overlap and the cloud's optical depth along the probe. FWM reflectivity scales roughly as OD², so this predicts the signal.</td></tr>
+        <tr><td class="row">Pump–probe spectrum</td><td class="num">83.5 ± 1 MHz, ramped within one shot</td><td class="num">Dispersive gain/absorption around zero probe–pump detuning, scaling with OD</td><td>Shows the χ(3) coherence that drives FWM. Probe and pumps share the master laser, so the resolution is set by the AOM ramp (kHz).</td></tr>
+        <tr><td class="row">FWM gain on the probe</td><td class="num">≈ 83.5 MHz</td><td class="num">T − 1 ≈ R in the ideal lossless case; 0.1 % → 10 nW on 10 µW</td><td>A conjugate is being made, but this alone doesn't prove it: Raman and Rayleigh pump–probe processes also give gain here.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Far side against the backward pick-off</h2>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th></th><th>Far-side PD</th><th>Backward pick-off (PBS A)</th></tr></thead>
+      <tbody>
+        <tr><td class="row">Sees</td><td>Transmitted probe</td><td>Phase conjugate</td></tr>
+        <tr><td class="row">Separation</td><td>Geometric. The probe leaves 8° off the pumps, and the conjugate never arrives</td><td>Polarisation at PBS A, 50 % of the conjugate</td></tr>
+        <tr><td class="row">Signal at R = 0.1 %</td><td>10 nW change on a 10 µW beam</td><td>≈ 5 nW on a nearly dark background</td></tr>
+        <tr><td class="row">Main background</td><td>Probe power noise. Needs the PD ref ratio</td><td>Reflections leaking past PBS B, MOT fluorescence</td></tr>
+        <tr><td class="row">Proves FWM</td><td>No</td><td>Yes, with the checks in the report</td></tr>
+        <tr><td class="row">Effort</td><td>One mirror, a lens, an iris and the PD</td><td>Pick-off alignment with a stand-in signal</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>The two use the same arm and the same probe window, so both can record in every shot. Run the far side first to confirm the optical depth and the spectrum. Then align PBS A and look for the conjugate where the spectrum says it should be.</p>
+  </section>
+
+  <section>
+    <h2>Steps</h2>
+    <ol class="steps">
+      <li><b>Start from the punch-through arm</b>, with the probe overlapping the cloud. Add the reflective ND, PBS B and PD ref so the probe is about 10 µW and normalised.</li>
+      <li><b>Place M3</b> at about (+280, +39) mm, before the retro λ/4. Fold the probe away from the MOT beam. Check with a card that its mount doesn't touch the retro beam.</li>
+      <li><b>Add the lens, the iris at its focus and the DET36A/M</b> with a 100 kΩ load. The iris cuts most MOT fluorescence and pump scatter.</li>
+      <li><b>Measure the optical depth.</b> Set the probe to about 90 MHz and compare probe transmission with and without the MOT.</li>
+      <li><b>Record the pump–probe spectrum.</b> In one shot, ramp <code>imaging_push_aom</code> across 83.5 ± 1 MHz over a few ms. Record PD trans and PD ref on two AnalogIn channels. Take a matching shot with no atoms and divide.</li>
+      <li><b>Then add the pick-off</b> from the pick-off sheet and look for the conjugate at the frequency where the spectrum shows gain.</li>
+    </ol>
+  </section>
+</main>
