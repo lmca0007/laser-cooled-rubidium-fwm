@@ -1,4 +1,4 @@
-﻿from __future__ import print_function
+from __future__ import print_function
 from lyse import *
 from pylab import *
 from analysislib.krb2 import aliases
@@ -108,6 +108,13 @@ def y_vs_auto(df, plot_measurement, independents):
     # long list
     if type(plot_measurement) in (str, string_):
             plot_measurement = [plot_measurement]
+
+    # Shots without images have no fit results, so skip measurements that no
+    # loaded shot has a column for
+    missing = [i for i in plot_measurement if getattr(aliases, i, i) not in df]
+    if missing:
+        print("No results for %s in these shots, skipping" % ", ".join(missing))
+    plot_measurement = [i for i in plot_measurement if i not in missing]
 
     # if we are not performing a parameter space scan, then we likely have a 
     # single shot on repeat. So do a y_vs_shot style plot

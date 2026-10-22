@@ -310,13 +310,27 @@ t+=10e-3
 # Turn on the getter
 rubidium_getter.constant(t, getter_load_current, "A")
 
-#If doing optimisation measurements, clear the MOT of its load during the experiment programming
+# keep_2d_mot_on leaves the 2D MOT light and coils running for the whole shot (the push
+# shutter alone stops the atom flux). Gating the source AOMs every shot changes their RF
+# duty and the 2D MOT then takes ~10 s to recover, so back-to-back shots get weaker.
+try:
+    keep_2d_mot_on
+except NameError:  # globals files without it
+    keep_2d_mot_on = False
+
+#If doing optimisation measurements, clear the MOT of its load during the experiment programming.
+#The quad is switched off too: at the load gradient it holds |2,2> atoms against gravity,
+#which would otherwise be recaptured and make each shot depend on the time since the last.
 if s01_Start_Fresh:
     science_trap_aom.disable(t)
-    source_trap_aom.disable(t)
+    quad_coils.constant(t, -10)
+    if not keep_2d_mot_on:
+        source_trap_aom.disable(t)
     t+=start_fresh_time
     science_trap_aom.enable(t)
-    source_trap_aom.enable(t)
+    quad_coils.constant(t, quad_coil_MOT_load_current, "A")
+    if not keep_2d_mot_on:
+        source_trap_aom.enable(t)
 
 #Switch on the source_mot_led to increase the pressure in the source chamber
 if source_mot_led_enable:
@@ -358,13 +372,14 @@ if s02_CMOT:
 
     add_time_marker(t, "MOT has been compressed",verbose = verbose)
 
-#Switch off the 2D MOT and push beam
-source_trap_aom.disable(t)
-source_repump_aom.disable(t)
-source_coil_bottom.constant(t, 0)
-source_coil_top.constant(t, 0)
-source_coil_north.constant(t, 0)
-source_coil_south.constant(t, 0)
+#Switch off the 2D MOT (the push beam is already off)
+if not keep_2d_mot_on:
+    source_trap_aom.disable(t)
+    source_repump_aom.disable(t)
+    source_coil_bottom.constant(t, 0)
+    source_coil_top.constant(t, 0)
+    source_coil_north.constant(t, 0)
+    source_coil_south.constant(t, 0)
 
 t+=100e-3
 
@@ -507,6 +522,8 @@ if Fluorescence_Imaging:
         science_trap_aom.disable(t)
         if rb_imaging_repump:
             science_repump_aom.disable(t)
+        # Wait before any absorption frames, otherwise the side camera triggers overlap
+        t += side_interframe_time
     elif Bottom_Imaging:
         bottom_camera.expose(t,'fluorescence_rb87', 'dark')
         t+=0.5*bottom_camera_exposure_time-0.5*bottom_imaging_flourescence_time
@@ -725,6 +742,13 @@ quad_coils_monitor.acquire('Quad_voltage',10e-3,t)
 mot_fluorescence.acquire('mot_fluorescence',10e-3,t)
 igc_pressure.acquire('IGC_voltage',10e-3,t)
 
+# Hold the between-shot (MOT loading) state so the MOT recovers before the next shot.
+# Back-to-back shots without this get steadily weaker (2026-10-22, sequence 0009).
+try:
+    inter_shot_wait
+except NameError:  # globals files without it
+    inter_shot_wait = 0
+t += inter_shot_wait
 
 t+=50e-3
 

@@ -19,7 +19,10 @@ def get_roi(shape, orientation):
 results = {}
 result_arrays = {}
 with h5py.File(lyse.path, 'r') as h5file:
-    for orientation, images in h5file["images"].items():
+    # Shots with Absorption_Imaging and Fluorescence_Imaging both off have no camera exposures, so no images group
+    if "images" not in h5file:
+        print("No images in this shot (imaging disabled?), skipping OD calculation")
+    for orientation, images in h5file.get("images", {}).items():
         # The camera pixel size comes from the Cameras globals, in case the connection table has not been recompiled
         pixel_size = dataset.get(orientation + '_pixel_size')
         print("pixel size (%s):" % orientation, pixel_size)

@@ -1,4 +1,4 @@
-﻿from lyse import *
+from lyse import *
 from pylab import *
 from analysislib.krb2 import aliases
 from analysislib.common.traces import *
@@ -22,7 +22,12 @@ n0_sums = []
 ys = []
 for fname in df['filepath']:
     run = Run(fname)
-    atoms = squeeze(float64(run.get_image(*(image_conf + ['atoms']))))
+    # The crop above is in side camera pixels, so only use shots with that image set
+    try:
+        atoms = squeeze(float64(run.get_image(*(image_conf + ['atoms']))))
+    except Exception:
+        print('No %s images in %s, skipping' % (' '.join(image_conf), os.path.basename(fname)))
+        continue
     flat = squeeze(float64(run.get_image(*(image_conf + ['flat']))))
     dark = squeeze(float64(run.get_image(*(image_conf + ['dark']))))
     atoms_crop = atoms[y1:y2,x1:x2]
@@ -48,13 +53,17 @@ for fname in df['filepath']:
 n0_sums = array(n0_sums)
 ys = array(ys)
 
-pars, u_pars = fit_linear(n0_sums, ys)
-print (pars)
-print ('I = %.2f +/- %.2f' % (-pars['m'], u_pars['u_m']))
+# A linear fit needs at least two shots
+if len(ys) < 2:
+    print('Need at least 2 shots with %s images, found %d' % (' '.join(image_conf), len(ys)))
+else:
+    pars, u_pars = fit_linear(n0_sums, ys)
+    print (pars)
+    print ('I = %.2f +/- %.2f' % (-pars['m'], u_pars['u_m']))
 
-figure()
-xp = linspace(min(n0_sums), max(n0_sums), 10)
-plot(xp, linear(xp, pars['m'],pars['c']))#*pars))
+    figure()
+    xp = linspace(min(n0_sums), max(n0_sums), 10)
+    plot(xp, linear(xp, pars['m'],pars['c']))#*pars))
 
-scatter(n0_sums, ys)
-show()
+    scatter(n0_sums, ys)
+    show()
