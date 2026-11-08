@@ -5,7 +5,7 @@
 - **Source LED:** the shot-to-shot MOT instability came from the source LED. Each pulse drained Rb from the source cell walls. With `source_mot_led_enable` = False, 8 back-to-back shots scatter by 1 % and don't drift.
 - **3D MOT:** it loads with τ = 4.0 s to a plateau of N_f ≈ 1.2 × 10¹⁰. That is enough for a first four-wave-mixing (FWM) attempt.
 - **Scan run:** most of the automated 2D MOT scan run was spoiled by the repump laser drifting off over about 30 minutes. Only the push scan, taken after the repump was corrected by hand, is usable.
-- **First FWM test:** it needs no second laser and no change to the connection table or sequence. The plan is backward degenerate FWM, with the MOT beams as pumps and the side imaging beam as the probe. A spare PBS and half-wave plate act as a 50:50 pickoff onto the DET36A.
+- **First FWM test:** the plan in this report (the side imaging beam as the probe) is out of date. See section 3.
 
 N_f is the background-subtracted fluorescence count from lyse `fluoro_frame`. It is a relative measure, not a calibrated atom number.
 
@@ -68,81 +68,9 @@ The per-scan fits are in [summary.jsonl](summary.jsonl).
 4. **Camera framing.** The cloud sits at row 302 of 2200 and is clipped at the frame edge, so N_f is underestimated. Steer the camera and imaging beam to the cloud rather than biasing the MOT away from the beam overlap. A 7-shot scan of `z_bias_MOT_load_current` (0 to 1.5) would show whether a bias costs atoms.
 5. **Further 3D MOT tuning isn't needed yet.** FWM depends on optical depth and temperature, so absorption imaging (OD) and time-of-flight (temperature) come next, then the CMOT/PGC stages.
 
-## 3. First FWM test: backward degenerate FWM on the side imaging axis
+## 3. First FWM test (out of date)
 
-### Why it works with the existing setup
-
-- **Pumps:** each retro-reflected MOT pair is two counter-propagating beams, so phase matching is automatic. The signal leaves along −k_probe for any probe angle.
-- **One laser:** the probe and pumps come from the same master laser, so laser frequency noise cancels and no second lock is needed.
-- **Frequencies:** `imaging_push_aom` and `science_trap_aom` share the 90 MHz resonance global, so they probably have the same frequency mapping. Setting the probe AOM to 83.5 MHz (the MOT AOM frequency) should make it exactly degenerate with the pumps. Between shots it sits at 84–87.4 MHz (the push frequency).
-- **Polarisation:** the existing imaging path (fibre, half-wave plate, PBS, QWP and lens in the CP06F/M assembly, 90° mirror) already throws away reflections. Light reflected from beyond the QWP comes back rotated 90° and leaves through the PBS side port. The FWM signal is a phase conjugate, so it returns in the probe's polarisation and passes back through the PBS. The repo's polarisation model, [optics/fwm_probe/polarisation.py](../../optics/fwm_probe/polarisation.py), confirms this.
-
-### Layout
-
-```
- fibre + HWP   ★ spare PBS   ★ HWP 22.5°   existing PBS    QWP + lens     90° mirror
-  ┌──┐┃                                                    (CP06F/M)      (tilt 5–10 mrad)
-  │  │┃ ═══════> ▣ ═══════════> ┃ ═══════════> ▣ ════════> assembly ═════> ════> ● cloud ══> ★ dump  [camera]
-  └──┘┃          ▣ <~~~~~~~~~~~ ┃ <~~~~~~~~~~~ ▣ <~~~~~~~~ <~~~~~~~~~~~~~ <~~~~ FWM signal
-                 │ 50 % of the signal         │ rotated reflections + 50 % of the probe → ★ dump
-                 ▼
-          lens → pinhole → DET36A → DPO3054 (1 MΩ, DC)
-```
-
-★ marks the new parts.
-
-- **The 22.5° half-wave plate:** it makes the existing PBS pass half the probe. On the way back it turns the signal to 45°, so the spare PBS reflects half of it to the detector.
-- **The 5–10 mrad tilt:** window reflections come back at twice the tilt angle and miss the pinhole, while the phase-conjugate signal still returns exactly along the probe.
-
-### Parts
-
-| Have | Add |
-|---|---|
-| DET36A/M, DPO3054, half-wave plates, quarter-wave plates, mirrors, spare PBS | Lens (f ≈ 100–200 mm), 0.5–1 mm pinhole or iris, lens tube or shroud, two beam dumps, ND filters, longer cage rods if needed |
-
-### Alignment
-
-1. **Record references.** Mark the angles of the outlet half-wave plate and the imaging QWP; neither should move. Measure the power after the existing PBS. Save a BLACS manual-mode camera image of the bare beam.
-2. **Make space by translating along the beam, never rotating.** Preferably slide the fibre and outlet half-wave plate back, so the optics that define the downstream path stay put.
-3. **Insert the spare PBS and half-wave plate.**
-   - Mount the spare PBS with the same orientation as the existing one.
-   - Find the half-wave plate's zero, where the existing PBS's side port is at its minimum.
-   - Check the power and the camera spot against the references.
-   - Rotate the half-wave plate 22.5° from zero, so the transmission drops to half.
-   - Tilt the half-wave plate a few degrees, so its back-surface reflection doesn't reach the pinhole.
-4. **Set the probe tilt** with the 90° mirror.
-5. **Align the detector arm with a stand-in signal.**
-   - Put a temporary mirror after the cell, with any spare QWP in front of it.
-   - A plain mirror's return would leave through the existing PBS side port. The model shows the extra QWP brings it fully back into the transmission state, mimicking the signal.
-   - Place the lens, pinhole and DET36A on that return, using ND filters: it carries about 25 % of the light leaving the fibre.
-   - Then swap the mirror for the dump.
-6. **Restore imaging afterwards** by setting the half-wave plate back to zero.
-
-### Measurement (BLACS manual mode, continuous MOT)
-
-1. **Four-way subtraction.** S = A − B − C + D, where:
-   - A is probe on, MOT on.
-   - B is probe on, MOT off.
-   - C is probe off, MOT on.
-   - D is probe off, MOT off.
-2. **Frequency test (the deciding evidence).**
-   - Step `imaging_push_aom` across 83.5 ± 3 MHz in 0.5 MHz steps, then finely around any peak.
-   - FWM peaks where the probe matches the pump frequency, near 83.5 MHz. Absorption peaks near resonance, at 90 MHz.
-   - Shifting `rb_science_MOT_trap_frequency` should move the FWM peak with it.
-3. **Retro test.** Walk the probe slightly. The conjugate signal stays on the pinhole, while reflections move off it.
-4. **Power test.** S should be linear in probe power. Change the probe power with ND filters only: `imaging_push_aom` also drives the push beam, so changing its amplitude changes the MOT.
-
-At 1 MΩ the DET36A gives about 0.5 mV per nW, with about 1 kHz bandwidth.
-
-### Caveats
-
-- **The 45° probe–pump angle** makes short gratings that atomic motion washes out in about 10 µs. Expect a weaker, broader signal than from the planned 4° probe arm ([optics/fwm_probe/](../../optics/fwm_probe/)). That arm is still blocked by the vacuum keep-out on faces 4 and 8.
-- **With the quad on**, Zeeman broadening removes the narrow ground-state features. The broad signal near degeneracy should remain.
-- **Polarisation filtering removes the window and lens reflections,** not the MOT fluorescence or pump scatter. The pinhole and the four-way subtraction handle those.
-
-### After a first signal
-
-Pulse the probe in the quad-off molasses window and record the DET36A on the existing `mot_fluorescence` input (ai11). This is a sequence-only change, and it lets lyse and a `mot_scan`-style frequency scan take over.
+This section planned a test with the old side-imaging beam as the probe. The 200 mW beam no longer takes that path. It now runs in free space to a 4° arm beside MOT axis B. See [optics/fwm_probe/README.md](../../optics/fwm_probe/README.md) for the current layout and [the 25 Oct report, section 5](../2026-10-25_mot_characterisation/README.md) for the probe power, the detection and the Zeeman settings.
 
 ## Open items
 

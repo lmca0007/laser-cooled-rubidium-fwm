@@ -14,11 +14,7 @@ python reports/2026-10-22_lost_mot_and_fwm_probe/mot_comparison.py
 - **Re-aligning the fibres brought the MOT back (0061), but it is about 70–200× dimmer than 0056.** The cloud has also moved about 260 px (1.2 mm) horizontally on the side camera.
 - **`keep_2d_mot_on` is not the cause.** 0063 has it on and is still about 200× dimmer than 0056. Look at the optics instead. The vertical MOT beam is 11 mW, against 25 mW for each horizontal beam. That is a candidate, though an imbalance between axes alone rarely costs this much.
 - **CMOT/PGC (0062 against 0061):** no atoms are lost, but these shots can't show any cooling. A repump-shutter timing clash also makes the fluorescence image unreliable in PGC shots.
-- **FWM probe plan:**
-  - Start with a punch-through probe at 8° to MOT beam 1-5 ([build sheet](punch_through_probe.html)).
-  - A single λ/4 + PBS can't separate the phase conjugate.
-  - A two-PBS pick-off (morning report) or a glass plate used in reverse can.
-  - A DET36A/M with a 1 MΩ load can detect nW signals.
+- **FWM probe plan:** out of date. See section 4.
 
 ## Timeline
 
@@ -112,67 +108,9 @@ Only `s02_CMOT` and `s03_PGC` differ between the two shots.
 
 **Recommendation:** turn CMOT and PGC off for the first FWM attempts and use the steady-state MOT as the medium. Come back to PGC with a time-of-flight series. Fix the repump shutter timing first.
 
-## 4. FWM probe plan
+## 4. FWM probe plan (out of date)
 
-### Stage 1: punch-through
-
-The [build sheet](punch_through_probe.html) has the diagram, the parts list and the procedure. Open it in a browser.
-
-The beam path is: 200 mW → λ/2 + PBS (rejected light into a dump rated for 200 mW) → 2 mm iris → M1 → M2 → cloud at 8° to MOT beam 1-5 → dump before the retro λ/4.
-
-- **8°, not 4°:** at 8° the last mirror is 39 mm off the MOT beam axis, so a standard ½″ mirror and mount clear the beam. Backward FWM is phase-matched at any angle; the larger angle only widens the narrow features.
-- **Where the arm goes:** between MOT axis 1-5 and the face 2-6 side-imaging line. That keeps it clear of the vacuum hardware on faces 4/8 (the problem with `optics/fwm_probe/geometry.py`) and of the camera sightline.
-- **Power:** start at 1 mW, about 5× the intensity of one MOT beam. A PBS can't go below about 0.2 mW.
-- **Test:** open `side_imaging_shutter` for the last 0.5–1 s of the load. `imaging_push_aom` is then on at the push frequency, near resonance. This needs a sequence change (a global such as `probe_during_load_time`), which isn't made yet.
-
-### Separating the conjugate from the probe
-
-- **Phase conjugation undoes every lossless reciprocal element on the way back.** The conjugate is σ⁻ about the fixed +x axis when the probe is σ⁺. But it travels in −x, so its helicity is the same as the probe's. A λ/4 turns it back into the probe's original linear state, and the PBS sends it back toward the laser.
-- **A mirror reflection behaves the opposite way.** It keeps σ⁺ about +x and flips the helicity. So a λ/4 + PBS removes ordinary back-reflections, not the conjugate.
-
-| Returning beam | About +x | Helicity | After the λ/4 | At the PBS |
-|---|---|---|---|---|
-| Mirror reflection | σ⁺ | flipped | V | side port |
-| Phase conjugate | σ⁻ | same | H | back to the laser |
-
-**Correction to an answer given in the evening:** a PBS can still be part of the pick-off, as long as a polariser sits between the beamsplitter and the atoms.
-- **Two-PBS pick-off (morning report, section 3):** a λ/2 at 22.5° sits between a spare PBS and the existing PBS. The existing PBS projects the probe, which stops the conjugate from undoing the λ/2. The conjugate then reaches the spare PBS at 45°, and half of it is reflected to the detector. The overall efficiency is about 25 %, the same as a 50:50 plate.
-- **Glass plate used in reverse:** an uncoated window at 45° (s-polarised) reflects about 9 % of the probe into the arm and transmits about 80 % of the conjugate to the detector behind it.
-- **Faraday rotator:** an isolator's reject port would take about 100 %, but there isn't one in the lab.
-
-### Detection with the DET36A/M
-
-The DET36A/M has no amplifier. It gives about 0.5 A/W at 780 nm and has about 40 pF capacitance.
-
-| Load | Output | Bandwidth |
-|---|---|---|
-| 50 Ω | 25 µV/µW | — |
-| 100 kΩ | 50 mV/µW | ≈ 40 kHz |
-| 1 MΩ | 0.5 mV/nW | ≈ 4 kHz |
-
-- **Probe:** use a 2 mm beam of about 10 µW (about 0.4 I_sat) rather than a focused 0.1 µW. The reflectivity doesn't depend on the probe size, so the signal power scales with probe power at fixed intensity.
-- **Expected signal:** a reflectivity of 0.1 % gives about 10 nW, or about 5 mV at 1 MΩ.
-- **Backgrounds will limit the measurement, not the detector:**
-  - Probe back-reflections from each AR surface in the arm are about 20 nW. Tilt the wave plates and lens a few degrees.
-  - MOT fluorescence collected by the arm is about 10 nW. Use an iris or a pinhole.
-  - Take a probe-off background in every shot.
-
-### Order of evidence
-
-1. **Punch-through:** the MOT shrinks or moves. This shows the probe overlaps the cloud.
-2. **Probe transmission on the DET36A/M at the exit (100 kΩ, 2–5 µW):**
-   - The dip on resonance (90 MHz) gives the cloud's optical depth.
-   - Near the pump frequency (83.5 MHz) a dispersive gain/absorption feature comes from the same χ(3) process as the conjugate.
-   - Probe and pumps share the master laser, so a single shot can ramp `imaging_push_aom` and record a spectrum with kHz resolution.
-3. **Conjugate on the pick-off.** It is FWM only if it passes these tests:
-
-| Test | FWM | Reflection or fluorescence |
-|---|---|---|
-| No atoms | gone | reflections stay |
-| Frequency scan | peak near 83.5 MHz | flat, or follows 90 MHz |
-| Load time | grows about as N² | fluorescence grows as N |
-| Tilt the input mirror slightly | stays on the detector | walks off |
-| Rotate the probe λ/4 | follows the polarisation selection rules | mostly insensitive |
+This section planned an 8° punch-through probe at MOT beam 1-5, a 1 MΩ detector and a 10 µW probe. The three build sheets for that plan are deleted. The current design is a 4° arm beside MOT axis B, 3.2 mW at the cloud and a 100 kΩ load. See [optics/fwm_probe/README.md](../../optics/fwm_probe/README.md) for the current layout and [the 25 Oct report, section 5](../2026-10-25_mot_characterisation/README.md) for the probe power, the detection and the Zeeman settings.
 
 ## Open items
 
@@ -183,16 +121,12 @@ The DET36A/M has no amplifier. It gives about 0.5 A/W at 780 nm and has about 40
   - push beam power.
 - Trace and document the vertical MOT beam route and which shutter gates it.
 - Fix the repump-shutter clash between PGC and fluorescence imaging, and set `repump_wait` = 0 for FWM.
-- Add the punch-through global and a probe window with a photodiode AnalogIn to `4wavemixing.py`. Each needs a free AnalogIn channel.
+- Add a probe window with a photodiode AnalogIn to `4wavemixing.py`. It needs a free AnalogIn channel.
 - Run a time-of-flight series before deciding on CMOT/PGC.
-- Update `optics/fwm_probe/geometry.py` for the mirrored arm at 8°.
 
 ## Files
 
 | File | Contents |
 |---|---|
 | `mot_comparison.py` / `.csv` | Brightness, centre, size and photodiode levels for 0055–0063 from the reduced data |
-| `punch_through_probe.html` | Stage 1 build sheet: punch-through diagram, parts, procedure, polarisation figure |
-| `probe_arm_pbs_pickoff.html` | Stage 2 build sheet: two-PBS pick-off, unfolded beam path with polarisation states, table placement, alignment |
-| `far_side_photodiode.html` | Far-side photodiode: why the conjugate never reaches it, what it measures, comparison with the pick-off |
 | [data/2026-10-22](../../data/2026-10-22) | Reduced copies of all 851 shots from the day (see [data/README.md](../../data/README.md)) |

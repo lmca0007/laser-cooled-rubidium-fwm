@@ -1,0 +1,136 @@
+\begin{thebibliography}{22}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Yariv and Pepper(1977)]{yariv1977}
+Amnon Yariv and David~M. Pepper.
+\newblock Amplified reflection, phase conjugation, and oscillation in degenerate four-wave mixing.
+\newblock \emph{Optics Letters}, 1:\penalty0 16--18, 1977.
+\newblock \doi{10.1364/OL.1.000016}.
+
+\bibitem[Abrams and Lind(1978)]{abrams1978}
+R.~L. Abrams and R.~C. Lind.
+\newblock Degenerate four-wave mixing in absorbing media.
+\newblock \emph{Optics Letters}, 2:\penalty0 94, 1978.
+\newblock \doi{10.1364/OL.2.000094}.
+\newblock Errata: Optics Letters 3, 205 (1978).
+
+\bibitem[McCormick et~al.(2007)McCormick, Boyer, Arimondo, and Lett]{mccormick2007}
+C.~F. McCormick, V.~Boyer, E.~Arimondo, and P.~D. Lett.
+\newblock Strong relative intensity squeezing by four-wave mixing in rubidium vapor.
+\newblock \emph{Optics Letters}, 32:\penalty0 178, 2007.
+\newblock \doi{10.1364/OL.32.000178}.
+
+\bibitem[Zhao et~al.(2009)Zhao, Chen, Bao, Strassel, Chuu, Jin, Schmiedmayer, Yuan, Chen, and Pan]{zhao2009}
+Bo~Zhao, Yu-Ao Chen, Xiao-Hui Bao, Thorsten Strassel, Chih-Sung Chuu, Xian-Min Jin, J{\"o}rg Schmiedmayer, Zhen-Sheng Yuan, Shuai Chen, and Jian-Wei Pan.
+\newblock A millisecond quantum memory for scalable quantum networks.
+\newblock \emph{Nature Physics}, 5:\penalty0 95--99, 2009.
+\newblock \doi{10.1038/nphys1153}.
+
+\bibitem[Moretti et~al.(2009)Moretti, Felinto, and Tabosa]{moretti2009}
+D.~Moretti, D.~Felinto, and J.~W.~R. Tabosa.
+\newblock Collapses and revivals of stored orbital angular momentum of light in a cold-atom ensemble.
+\newblock \emph{Physical Review A}, 79:\penalty0 023825, 2009.
+\newblock \doi{10.1103/PhysRevA.79.023825}.
+
+\bibitem[Akulshin et~al.(2011)Akulshin, McLean, Sidorov, and Hannaford]{akulshin2011}
+A.~M. Akulshin, R.~J. McLean, A.~I. Sidorov, and P.~Hannaford.
+\newblock Probing degenerate two-level atomic media by coherent optical heterodyning.
+\newblock \emph{Journal of Physics B: Atomic, Molecular and Optical Physics}, 44:\penalty0 175502, 2011.
+\newblock \doi{10.1088/0953-4075/44/17/175502}.
+
+\bibitem[Cardoso and Tabosa(2000)]{cardoso2000}
+G.~C. Cardoso and J.~W.~R. Tabosa.
+\newblock Four-wave mixing in dressed cold cesium atoms.
+\newblock \emph{Optics Communications}, 185:\penalty0 353--358, 2000.
+\newblock \doi{10.1016/S0030-4018(00)01033-6}.
+
+\bibitem[Lezama et~al.(2001)Lezama, Cardoso, and Tabosa]{lezama2001}
+A.~Lezama, G.~C. Cardoso, and J.~W.~R. Tabosa.
+\newblock Polarization dependence of four-wave mixing in a degenerate two-level system.
+\newblock \emph{Physical Review A}, 63:\penalty0 013805, 2001.
+\newblock \doi{10.1103/PhysRevA.63.013805}.
+
+\bibitem[Zhou et~al.(2010)Zhou, Xia, Xu, and Wang]{zhou2010}
+Shu-Yu Zhou, Tian Xia, Zhen Xu, and Yu-Zhu Wang.
+\newblock Experimental properties of optical phase conjugation in cold atoms in a magneto-optical trap.
+\newblock \emph{Chinese Physics Letters}, 27:\penalty0 014211, 2010.
+\newblock \doi{10.1088/0256-307X/27/1/014211}.
+
+\bibitem[Tempone-Wiltshire(2019)]{thesis}
+Sebastien Tempone-Wiltshire.
+\newblock \emph{Development of a rapid {Rubidium-87} {Bose} {Einstein} Condensate apparatus}.
+\newblock PhD thesis, School of Physics and Astronomy, Monash University, 2019.
+
+\bibitem[Boyd(2008)]{boyd2008}
+Robert~W. Boyd.
+\newblock \emph{Nonlinear Optics}.
+\newblock Academic Press, 3rd edition, 2008.
+
+\bibitem[Fu and Sargent(1979)]{fu1979}
+Tao-yi Fu and Murray Sargent.
+\newblock Effects of signal detuning on phase conjugation.
+\newblock \emph{Optics Letters}, 4:\penalty0 366, 1979.
+\newblock \doi{10.1364/OL.4.000366}.
+
+\bibitem[Steck(2025)]{steck}
+Daniel~A. Steck.
+\newblock Rubidium 87 {D} line data.
+\newblock Revision 2.3.4, \url{http://steck.us/alkalidata}, 2025.
+
+\bibitem[Raab et~al.(1987)Raab, Prentiss, Cable, Chu, and Pritchard]{raab1987}
+E.~L. Raab, M.~Prentiss, Alex Cable, Steven Chu, and D.~E. Pritchard.
+\newblock Trapping of neutral sodium atoms with radiation pressure.
+\newblock \emph{Physical Review Letters}, 59:\penalty0 2631--2634, 1987.
+\newblock \doi{10.1103/PhysRevLett.59.2631}.
+
+\bibitem[Dieckmann et~al.(1998)Dieckmann, Spreeuw, Weidem{\"u}ller, and Walraven]{dieckmann1998}
+K.~Dieckmann, R.~J.~C. Spreeuw, M.~Weidem{\"u}ller, and J.~T.~M. Walraven.
+\newblock Two-dimensional magneto-optical trap as a source of slow atoms.
+\newblock \emph{Physical Review A}, 58:\penalty0 3891--3895, 1998.
+\newblock \doi{10.1103/PhysRevA.58.3891}.
+
+\bibitem[Sesko et~al.(1991)Sesko, Walker, and Wieman]{sesko1991}
+D.~W. Sesko, T.~G. Walker, and C.~E. Wieman.
+\newblock Behavior of neutral atoms in a spontaneous force trap.
+\newblock \emph{Journal of the Optical Society of America B}, 8:\penalty0 946, 1991.
+\newblock \doi{10.1364/JOSAB.8.000946}.
+
+\bibitem[Townsend et~al.(1995)Townsend, Edwards, Cooper, Zetie, Foot, Steane, Szriftgiser, Perrin, and Dalibard]{townsend1995}
+C.~G. Townsend, N.~H. Edwards, C.~J. Cooper, K.~P. Zetie, C.~J. Foot, A.~M. Steane, P.~Szriftgiser, H.~Perrin, and J.~Dalibard.
+\newblock Phase-space density in the magneto-optical trap.
+\newblock \emph{Physical Review A}, 52:\penalty0 1423--1440, 1995.
+\newblock \doi{10.1103/PhysRevA.52.1423}.
+
+\bibitem[Lett et~al.(1989)Lett, Phillips, Rolston, Tanner, Watts, and Westbrook]{lett1989}
+P.~D. Lett, W.~D. Phillips, S.~L. Rolston, C.~E. Tanner, R.~N. Watts, and C.~I. Westbrook.
+\newblock Optical molasses.
+\newblock \emph{Journal of the Optical Society of America B}, 6:\penalty0 2084, 1989.
+\newblock \doi{10.1364/JOSAB.6.002084}.
+
+\bibitem[Lett et~al.(1988)Lett, Watts, Westbrook, Phillips, Gould, and Metcalf]{lett1988}
+Paul~D. Lett, Richard~N. Watts, Christoph~I. Westbrook, William~D. Phillips, Phillip~L. Gould, and Harold~J. Metcalf.
+\newblock Observation of atoms laser cooled below the {Doppler} limit.
+\newblock \emph{Physical Review Letters}, 61:\penalty0 169--172, 1988.
+\newblock \doi{10.1103/PhysRevLett.61.169}.
+
+\bibitem[Ducloy and Bloch(1984)]{ducloy1984}
+M.~Ducloy and D.~Bloch.
+\newblock Polarization properties of phase-conjugate mirrors: Angular dependence and disorienting collision effects in resonant backward four-wave mixing for {Doppler}-broadened degenerate transitions.
+\newblock \emph{Physical Review A}, 30:\penalty0 3107--3122, 1984.
+\newblock \doi{10.1103/PhysRevA.30.3107}.
+
+\bibitem[{Allied Vision}()]{gt2750}
+{Allied Vision}.
+\newblock Prosilica {GT2750} datasheet and technical manual.
+\newblock Manufacturer documentation.
+
+\bibitem[{Thorlabs}()]{det36a}
+{Thorlabs}.
+\newblock {DET36A/M} biased silicon detector specification sheet.
+\newblock Manufacturer documentation.
+
+\end{thebibliography}

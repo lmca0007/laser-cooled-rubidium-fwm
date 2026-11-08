@@ -1,14 +1,18 @@
 """PyOpticL layout of the FWM probe around the octagonal science cell.
 
 Run inside FreeCAD with the PyOpticL workbench installed (see README.md):
-    Macro > Macros... > fwm_probe_layout.py > Execute
-or render it headless-with-GUI:
+    Macro > Macros... > build_in_freecad.py > Execute
+or from a terminal:
     FreeCAD.exe optics/fwm_probe/build_in_freecad.py
 
-All positions come from geometry.py, and the waveplate angles come from
-polarisation.py, so the CAD model matches the checked numbers. The MOT beams and the
-imaging path are context only. Set their optic positions in geometry.py to the real
-table before you use the model for clearance checks.
+All positions come from geometry.py (thesis frame: X along the DPT, Y to the left, Z up), and
+the waveplate angles from polarisation.py. For a plan view without FreeCAD, run
+    python optics/fwm_probe/geometry.py --plot
+
+Context parts follow the thesis: the 40 mm octagon with seals on the X axis [Sec. 4.1.4],
+28 mm MOT beams retro-reflected by one HR-coated QWP each [Sec. 5.4.2], and the side imaging
+along Y with two f = 75 mm achromats [Sec. 7.5.1]. Distances that geometry.py marks ASSUMED
+(MOT optics, seal tubes, vacuum hardware) are placeholders.
 """
 import math
 import sys
@@ -20,7 +24,7 @@ sys.path.insert(0, str(HERE))
 import numpy as np
 import Part
 import FreeCAD as App
-from PyOpticL.beam_path import BeamPath, Stop, linear_polarization
+from PyOpticL.beam_path import BeamPath, Stop, _normalize_jones_vector, linear_polarization
 from PyOpticL.layout import Component, Layout
 from PyOpticL.library import optics, thorlabs
 from PyOpticL.utils import Dimension as dim
@@ -29,13 +33,11 @@ from PyOpticL.utils import cylinder_shape
 import geometry as geo
 import polarisation as pol
 
-IMAGING_BEAM_RADIUS = 5.0    # mm, ASSUMED: context only
-
 
 # --- Custom part definitions -----------------------------------------------------------
 
 def _octagon_prism(flat_to_flat, z0, height):
-    """Octagonal prism with flats normal to 0, 45, 90, ... deg (faces 5, 6, 7, ...)."""
+    """Octagonal prism with flats normal to 0, 45, 90, ... deg."""
     r = flat_to_flat / 2 / math.cos(math.radians(22.5))
     pts = [App.Vector(r * math.cos(math.radians(22.5 + 45 * i)),
                       r * math.sin(math.radians(22.5 + 45 * i)), z0) for i in range(9)]
@@ -50,8 +52,8 @@ def _along(angle_deg, start, length, diameter):
 
 
 class Octagon_Cell:
-    """Science cell (thesis Sec. 4.1.4): 4 mm glass octagon, 40 mm square flats.
-    Faces 4 and 8 carry the glass-to-metal seals, drawn with ASSUMED tube and flange sizes."""
+    """Science cell [THESIS Sec. 4.1.4]: 4 mm glass, 40 mm square flats, glass-to-metal seals on
+    the two flats on the X axis. Seal tube size ASSUMED (geometry.py)."""
 
     object_group = "optics"
     object_color = (0.6, 0.8, 0.9)
@@ -63,29 +65,38 @@ class Octagon_Cell:
         inner = _octagon_prism(geo.CELL_FLAT_TO_FLAT - 2 * w, -geo.CELL_HEIGHT / 2 + w, geo.CELL_HEIGHT - 2 * w)
         cell = outer.cut(inner)
         half = geo.CELL_FLAT_TO_FLAT / 2
-        for face in geo.SEAL_FACES:
-            angle = geo.FACE_ANGLE_DEG[face]
-            tube = _along(angle, half - w, geo.SEAL_TUBE_LENGTH + w, geo.SEAL_TUBE_OD)
-            bore = _along(angle, half - w - 1, geo.SEAL_TUBE_LENGTH + w + 2, geo.SEAL_TUBE_OD - 2 * w)
-            flange = _along(angle, half + geo.SEAL_TUBE_LENGTH, geo.CF275_FLANGE_THICKNESS,
-                            geo.CF275_FLANGE_OD)
-            cell = cell.fuse(tube).fuse(flange).cut(bore)
+        for angle in geo.SEAL_DEG:
+            tube = _along(angle, half - w, geo.SEAL_TUBE_LENGTH + w, 2 * geo.SEAL_TUBE_RADIUS)
+            bore = _along(angle, half - w - 1, geo.SEAL_TUBE_LENGTH + w + 2, 2 * (geo.SEAL_TUBE_RADIUS - w))
+            cell = cell.fuse(tube).cut(bore)
         return cell
 
 
 class Vacuum_Keepout:
-    """ASSUMED keep-out volume for the vacuum system along the seal axis (faces 4-8):
-    main chamber (6" spherical octagon via a reducer) one side, bellows + gate valve the other."""
+    """Vacuum hardware along X (geometry.VACUUM_PARTS): main chamber (spherical octagon), DPT tube
+    and source at -X, bellows and gate valve at +X. Sizes from the CAD side view, drawn as
+    cylinders about the X axis."""
 
     object_group = "optics"
     object_color = (0.9, 0.3, 0.3)
     object_transparency = 85
 
     def shape(self):
-        start = geo.vacuum_keepout_start() + geo.CF275_FLANGE_THICKNESS
-        parts = [_along(geo.FACE_ANGLE_DEG[f], start, geo.VACUUM_KEEPOUT_LENGTH,
-                        2 * geo.VACUUM_KEEPOUT_RADIUS) for f in geo.SEAL_FACES]
-        return parts[0].fuse(parts[1])
+        shape = None
+        for _, x0, x1, r in geo.VACUUM_PARTS:
+            part = _along(0.0, x0, x1 - x0, 2 * r)
+            shape = part if shape is None else shape.fuse(part)
+        return shape
+
+
+class Camera_Box:
+    """Side camera body (GT2750) as a placeholder box, facing +Y."""
+
+    object_group = "optics"
+    object_color = (0.2, 0.2, 0.2)
+
+    def shape(self):
+        return Part.makeBox(50, 50, 50, App.Vector(-25, -50, -25))
 
 
 class Beam_Dump:
@@ -94,7 +105,7 @@ class Beam_Dump:
     object_group = "optics"
     object_color = (0.1, 0.1, 0.1)
 
-    def __init__(self, diameter=geo.PROBE_DUMP_DIAMETER, depth=10.0):
+    def __init__(self, diameter=2 * geo.DUMP_RADIUS, depth=10.0):
         self.diameter = diameter
         self.depth = depth
 
@@ -106,21 +117,26 @@ class Beam_Dump:
                               position=(-self.depth, 0, 0), rotation=(0, 90, 0))
 
 
-def half_inch_waveplate(label, retardance, angle):
+def waveplate(label, retardance, angle, inch=0.5):
+    mount = thorlabs.Rotation_Mount_RSP05() if inch == 0.5 else thorlabs.Rotation_Mount_RSP1()
     return Component(label=label, definition=optics.Circular_Waveplate(
-        diameter=dim(0.5, "in"), retardance=retardance, fast_axis_angle=angle,
-        mount_definition=thorlabs.Rotation_Mount_RSP05()))
+        diameter=dim(inch, "in"), retardance=retardance, fast_axis_angle=angle, mount_definition=mount))
 
 
-def one_inch_waveplate(label, retardance, angle):
-    return Component(label=label, definition=optics.Circular_Waveplate(
-        diameter=dim(1, "in"), retardance=retardance, fast_axis_angle=angle,
-        mount_definition=thorlabs.Rotation_Mount_RSP1()))
-
-
-def one_inch_mirror(label):
+def mirror(label, inch=1.0):
     return Component(label=label, definition=optics.Circular_Mirror(
-        diameter=dim(1, "in"), mount_definition=thorlabs.Mirror_Mount_KM100()))
+        diameter=dim(inch, "in"), mount_definition=thorlabs.Mirror_Mount_KM100()))
+
+
+def pbs(label, inch=0.5):
+    return Component(label=label, definition=optics.Beamsplitter_Cube_on_Surface_Adapter(
+        side_length=dim(inch, "in"), ref_polarization=90))
+
+
+def lens(label, f, inch=1.0):
+    kw = dict(mount_definition=thorlabs.Lens_Mount_L05G()) if inch == 0.5 else {}
+    return Component(label=label, definition=optics.Spherical_Lens(
+        diameter=dim(inch, "in"), focal_length=dim(f, "mm"), **kw))
 
 
 def angle_of(v):
@@ -129,111 +145,105 @@ def angle_of(v):
 
 # --- Layout ------------------------------------------------------------------------------
 
-def fwm_probe_layout(forward_pump='sigma+'):
-    layout = Layout("FWM probe table")
-    hwp_deg, qwp_deg = pol.solve_waveplates(-1 if forward_pump == 'sigma+' else 1, 0.0)[1:]
+def fwm_probe_layout(forward_pump="sigma+"):
+    layout = Layout("FWM probe table (thesis frame)")
+    _, hwp_deg, qwp_deg = pol.solve_waveplates(1 if forward_pump == "sigma+" else -1, 0.0)
 
-    layout.add(Component(label="Science cell: 40 mm octagon, seals on faces 4 and 8", definition=Octagon_Cell()),
+    layout.add(Component(label="Science cell: 40 mm octagon, seals on the X axis", definition=Octagon_Cell()),
                position=(0, 0, 0), rotation=(0, 0, 0))
-    layout.add(Component(label="Vacuum system keep-out (ASSUMED radius)", definition=Vacuum_Keepout()),
+    layout.add(Component(label="Vacuum hardware along X (CAD side view)", definition=Vacuum_Keepout()),
                position=(0, 0, 0), rotation=(0, 0, 0))
 
-    # MOT axis 1-5: forward pump F (+x), retro-reflected as the backward pump B (context)
-    mot15 = layout.add(BeamPath(label="MOT beam 1-5: forward pump F, retro B", wavelength=geo.WAVELENGTH_NM,
-                                waist=dim(11, "mm"), final_distance=dim(80, "mm")),
-                       position=(geo.MOT_INPUT_QWP_X - 130, 0, 0), rotation=(0, 0, 0))
-    mot15.add(one_inch_waveplate("MOT 1-5 input QWP (existing)", 0.25, 45), beam_index=0b1,
-              distance=dim(130, "mm"), rotation=0)
-    mot15.add(one_inch_waveplate("MOT 1-5 retro QWP (existing)", 0.25, 45), beam_index=0b1,
-              distance=dim(geo.MOT_RETRO_QWP_X - geo.MOT_INPUT_QWP_X, "mm"), rotation=0)
-    mot15.add(one_inch_mirror("MOT 1-5 retro mirror (existing)"), beam_index=0b1,
-              distance=dim(geo.MOT_RETRO_MIRROR_X - geo.MOT_RETRO_QWP_X, "mm"), rotation=180)
-    mot15.recompute()  # place each path's optics before the next path is traced
+    # Horizontal MOT axes (context). Each F beam enters at the valve end and travels towards its
+    # retro at the source end (geometry.RETRO_DEG), where an HR-coated QWP returns it as B.
+    for name in ("B", "A"):
+        travel = geo.RETRO_DEG[name]
+        start = -geo.INPUT_DISTANCE[name] * geo.unit_deg(travel)
+        path = layout.add(BeamPath(label=f"MOT axis {name}: F in, B retro", wavelength=geo.WAVELENGTH_NM,
+                                   waist=dim(geo.MOT_WAIST, "mm"), final_distance=dim(50, "mm")),
+                          position=(*start, 0), rotation=(0, 0, travel))
+        span = geo.INPUT_DISTANCE[name] + geo.RETRO_DISTANCE[name]
+        path.add(mirror(f"MOT {name} retro: HR-coated QWP (one optic, [THESIS])", inch=2.0), beam_index=0b1,
+                 distance=dim(span, "mm"), rotation=travel + 180)
+        path.recompute()  # place each path's optics before the next path is traced
 
-    # MOT axis 3-7 (context)
-    mot37 = layout.add(BeamPath(label="MOT beam 3-7", wavelength=geo.WAVELENGTH_NM,
-                                waist=dim(11, "mm"), final_distance=dim(80, "mm")),
-                       position=(0, geo.MOT_INPUT_QWP_X - 130, 0), rotation=(0, 0, 90))
-    mot37.add(one_inch_waveplate("MOT 3-7 input QWP (existing)", 0.25, 45), beam_index=0b1,
-              distance=dim(130, "mm"), rotation=90)
-    mot37.add(one_inch_waveplate("MOT 3-7 retro QWP (existing)", 0.25, 45), beam_index=0b1,
-              distance=dim(geo.MOT_RETRO_QWP_X - geo.MOT_INPUT_QWP_X, "mm"), rotation=90)
-    mot37.add(one_inch_mirror("MOT 3-7 retro mirror (existing)"), beam_index=0b1,
-              distance=dim(geo.MOT_RETRO_MIRROR_X - geo.MOT_RETRO_QWP_X, "mm"), rotation=-90)
-    mot37.recompute()
-
-    # Side imaging 2-6 (context, beam size assumed)
-    start = -350 / math.sqrt(2)
-    imaging = layout.add(BeamPath(label="Side imaging 2-6 (context)", wavelength=geo.WAVELENGTH_NM,
-                                  waist=dim(IMAGING_BEAM_RADIUS, "mm"), final_distance=dim(700, "mm")),
-                         position=(start, start, 0), rotation=(0, 0, 45))
+    # Side imaging (context): beam from +Y, camera optics at -Y [THESIS Sec. 7.5.1]
+    imaging = layout.add(BeamPath(label="Old side-imaging beam (2 cm, from +Y)", wavelength=geo.WAVELENGTH_NM,
+                                  waist=dim(geo.IMAGING_RADIUS, "mm"), final_distance=dim(80, "mm")),
+                         position=(0, 450, 0), rotation=(0, 0, -90))
+    imaging.add(lens("Side imaging lens 1, f = 75 mm achromat", 75), beam_index=0b1,
+                distance=dim(450 + geo.CAMERA_LENS1, "mm"), rotation=-90)
+    imaging.add(lens("Side imaging lens 2, f = 75 mm achromat", 75), beam_index=0b1,
+                distance=dim(geo.CAMERA_LENS2 - geo.CAMERA_LENS1, "mm"), rotation=-90)
     imaging.recompute()
+    layout.add(Component(label="Side camera GT2750 (placeholder box)", definition=Camera_Box()),
+               position=(0, -geo.CAMERA_CHIP, 0), rotation=(0, 0, 0))
 
-    # --- Probe: fibre -> HWP -> PBS -> 90:10 pick-off -> HWP -> QWP -> lens -> D-mirror -> cloud
-    spot = geo.d_mirror_centre()
-    fibre_xy = tuple(geo.fibre_position())
-    arm = angle_of(geo.arm_direction())                        # -90 deg
-    layout.add(Component(label="Probe fibre collimator", definition=thorlabs.Fiberport_PAF2A4A()),
-               position=(*fibre_xy, 0), rotation=(0, 0, arm))
-    probe = layout.add(BeamPath(label="Probe", wavelength=geo.WAVELENGTH_NM,
-                                waist=dim(geo.PROBE_INPUT_RADIUS, "mm"),
-                                polarization=linear_polarization(0), final_distance=dim(60, "mm")),
-                       position=(*fibre_xy, 0), rotation=(0, 0, arm))
-
-    pos = geo.ARM_POSITIONS
-    probe.add(half_inch_waveplate("Probe input HWP (align fibre axis to PBS)", 0.5, 0), beam_index=0b1,
-              distance=dim(pos['input HWP'], "mm"), rotation=arm)
-    probe.add(Component(label="Probe PBS (clean-up polariser)",
-                        definition=optics.Beamsplitter_Cube_on_Surface_Adapter(
-                            side_length=dim(0.5, "in"), ref_polarization=90)),
-              beam_index=0b1, distance=dim(pos['PBS (clean-up polariser)'] - pos['input HWP'], "mm"),
-              rotation=arm)
-    pickoff = probe.add(Component(label="Pick-off plate R:T 90:10 (non-polarising)",
-                                  definition=optics.Circular_Sampler(
-                                      diameter=dim(1, "in"), ref_ratio=0.9,
-                                      mount_definition=thorlabs.Beamsplitter_Mount_B1G())),
-                        beam_index=0b1,
-                        distance=dim(pos['pick-off plate R:T 90:10'] - pos['PBS (clean-up polariser)'], "mm"),
-                        rotation=45)
-    probe.add(Component(label="Dump: forward probe reflection (90 %)", definition=Beam_Dump(10)),
-              beam_index=0b11, distance=dim(geo.PICKOFF_DUMP_DISTANCE, "mm"), rotation=180)
-    # after the pick-off plate, place the optics at table y (the plate lengthens the path)
-    probe.add(half_inch_waveplate(f"Probe HWP ({hwp_deg:+.0f} deg)", 0.5, hwp_deg), beam_index=0b10,
-              y_position=dim(geo.arm_y(pos['HWP']), "mm"), rotation=arm)
-    probe.add(half_inch_waveplate(f"Probe QWP ({qwp_deg:+.0f} deg: circular, opposite to F)", 0.25, qwp_deg),
-              beam_index=0b10, y_position=dim(geo.arm_y(pos['QWP']), "mm"), rotation=arm)
-    lens_at = geo.lens_distance_from_fibre()
-    probe.add(Component(label=f"Probe lens f = {geo.LENS_FOCAL_LENGTH:.0f} mm",
-                        definition=optics.Spherical_Lens(diameter=dim(0.5, "in"),
-                                                         focal_length=dim(geo.LENS_FOCAL_LENGTH, "mm"),
-                                                         mount_definition=thorlabs.Lens_Mount_L05G())),
-              beam_index=0b10, y_position=dim(geo.arm_y(lens_at), "mm"), rotation=arm)
-    # D-shaped mirror: modelled as a 1/2 inch disc, offset so that its straight edge is
-    # D_MIRROR_EDGE_GAP from the probe on the MOT side. Hold it with a D-mirror mount from the far side.
-    probe.add(Component(label=f"Probe D-mirror (edge {geo.D_MIRROR_EDGE_GAP} mm from probe, MOT side)",
-                        definition=optics.Circular_Mirror(diameter=dim(0.5, "in"),
+    # --- Probe: free-space beam -> power HWP + PBS -> PBS A -> HWP 22.5 -> PBS B -> QWP ->
+    #     Galilean telescope -> M1 -> D-mirror -> cloud -> dump
+    # PyOpticL renumbers a beam only where a cube really splits it (index i -> 2i transmitted,
+    # 2i + 1 reflected). The H probe splits at the power PBS (set by the power HWP) and at PBS B
+    # (45 deg after the HWP at 22.5 deg). PBS A passes it whole, so the index stays 0b10 there.
+    arm = angle_of(geo.main_arm_direction())
+    start_back = max(geo.ARM_PARTS.values()) + 40.0
+    start = geo.arm_point(start_back)
+    probe = layout.add(BeamPath(label="Probe (free space, 3 mm)", wavelength=geo.WAVELENGTH_NM,
+                                waist=dim(geo.PROBE_INPUT_RADIUS, "mm"), polarization=linear_polarization(0),
+                                power=geo.PROBE_SOURCE_POWER, final_distance=dim(60, "mm")),
+                       position=(*start, 0), rotation=(0, 0, arm))
+    order = sorted(geo.ARM_PARTS.items(), key=lambda kv: -kv[1])
+    power_hwp = geo.power_hwp_deg()
+    parts = {
+        "lambda/2 (power)": (waveplate(f"Power HWP ({power_hwp:.1f} deg)", 0.5, power_hwp), 0b1),
+        "PBS (power dump)": (pbs("Power PBS (reflection to a dump)"), 0b1),
+        "PBS A (pick-off, PD FWM port)": (pbs("PBS A: pick-off, 4th port to PD FWM"), 0b10),
+        "lambda/2 at 22.5 deg": (waveplate("HWP at 22.5 deg", 0.5, 22.5), 0b10),
+        "PBS B (polariser, PD ref port)": (pbs("PBS B: polariser, reflection to PD ref"), 0b10),
+        "lambda/4 (circular)": (waveplate(f"Probe QWP ({qwp_deg:+.0f} deg, same sigma as F)", 0.25, qwp_deg),
+                                0b100),
+        "telescope f = -75 mm": (lens("Telescope f = -75 mm", geo.TELESCOPE[0], 0.5), 0b100),
+        "telescope f = +200 mm": (lens("Telescope f = +200 mm", geo.TELESCOPE[1]), 0b100),
+    }
+    placed = {}
+    last = start_back
+    for name, back in order:
+        comp, index = parts[name]
+        placed[name] = probe.add(comp, beam_index=index, distance=dim(last - back, "mm"), rotation=arm)
+        last = back
+    probe.add(Component(label="Dump: power PBS reflection", definition=Beam_Dump()), beam_index=0b11,
+              distance=dim(40, "mm"), rotation=arm + geo.PBS_REFLECT_TURN)
+    probe.add(Component(label="PD ref (probe power monitor)", definition=thorlabs.Photodetector_PDA10A2()),
+              beam_index=0b101, distance=dim(geo.PD_OFFSET, "mm"), rotation=arm + geo.PBS_REFLECT_TURN)
+    probe.add(mirror("M1 (1\")"), beam_index=0b100, distance=dim(last, "mm"),
+              rotation=angle_of(geo.m1_normal()))
+    # D-shaped mirror: a 1" disc offset so that its straight edge is 1.5 w from the probe, on the
+    # MOT side. Hold it from the round side with a D-mirror mount.
+    gap = geo.D_MIRROR_EDGE_GAP_W * geo.PROBE_WAIST
+    probe.add(Component(label=f"D-mirror 1\" (edge {gap:.0f} mm from the probe, MOT side)",
+                        definition=optics.Circular_Mirror(diameter=dim(1, "in"),
                                                           thickness=dim(geo.D_MIRROR_THICKNESS, "mm"))),
-              beam_index=0b10, y_position=dim(spot[1], "mm"),
-              rotation=geo.rotation_deg(geo.d_mirror_normal()),
-              offset=(dim(0.25, "in") - dim(geo.D_MIRROR_EDGE_GAP, "mm"), 0))
-    probe.add(Component(label="Dump: transmitted probe (retro side)", definition=Beam_Dump()),
-              beam_index=0b10, x_position=dim(geo.PROBE_DUMP_X, "mm"),
-              rotation=angle_of(geo.probe_direction()) + 180)
-
+              beam_index=0b100, distance=dim(geo.M1_GAP, "mm"),
+              rotation=angle_of(geo.d_mirror_normal()), offset=(dim(0.5, "in") - dim(gap, "mm"), 0))
+    dump = geo.transmitted_dump()
+    probe.add(Component(label="Dump: transmitted probe (before the axis-B input optics)", definition=Beam_Dump()),
+              beam_index=0b100, distance=dim(float(np.linalg.norm(geo.d_mirror_centre()) + np.linalg.norm(dump)), "mm"),
+              rotation=angle_of(geo.probe_direction()))
     probe.recompute()  # place the probe optics before the signal path looks for them
 
-    # --- FWM signal: phase conjugate of the probe, back along the probe path
-    back = angle_of(-geo.probe_direction())
-    signal = layout.add(BeamPath(label="FWM signal (conjugate, returns along the probe)",
-                                 wavelength=geo.WAVELENGTH_NM, waist=dim(geo.probe_waist_at_cloud(), "mm"),
-                                 final_distance=dim(40, "mm")),
-                        position=(0, 0, 0), rotation=(0, 0, back))
-    signal.add(Component(label="Signal photodiode (PDA10A2, beat note later)",
+    # --- FWM signal: the phase conjugate of the probe at the cloud (complex conjugate Jones vector),
+    # back along the probe path. The QWP turns it into H, so PBS B passes it whole (index 0b1). The
+    # HWP at 22.5 deg turns it to 45 deg, and PBS A reflects half into its 4th port (0b11).
+    at_cloud = [s.Proxy for s in probe.get_object().BeamSegments if s.Proxy.index == 0b100][-1]
+    conjugate = np.conj(_normalize_jones_vector(at_cloud.polarization_jones))
+    signal = layout.add(BeamPath(label="FWM conjugate (retraces the probe)", wavelength=geo.WAVELENGTH_NM,
+                                 waist=dim(geo.PROBE_WAIST, "mm"), polarization=conjugate,
+                                 power=geo.CONJUGATE_POWER, final_distance=dim(40, "mm")),
+                        position=(0, 0, 0), rotation=(0, 0, angle_of(-geo.probe_direction())))
+    signal.add(Component(label="PD FWM: lens, pinhole, DET36A/M at 100 kOhm",
                          definition=thorlabs.Photodetector_PDA10A2()),
-               beam_index=0b11, distance=dim(geo.PHOTODIODE_DISTANCE, "mm"), rotation=0,
-               after_object=pickoff)
+               beam_index=0b11, distance=dim(geo.PD_OFFSET, "mm"), rotation=angle_of(-geo.main_arm_direction())
+               + geo.PBS_REFLECT_TURN, after_object=placed["PBS A (pick-off, PD FWM port)"])
     signal.recompute()
-
     return layout
 
 

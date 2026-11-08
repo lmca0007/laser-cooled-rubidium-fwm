@@ -1,7 +1,7 @@
 """Polarisation chain for the FWM probe, the MOT pumps and the returning FWM signal.
 
-Fields are complex 3-vectors in the fixed table frame of geometry.py, with time
-dependence exp(-i w t). The spin of a field about a fixed axis a is
+Fields are complex 3-vectors in the pump frame of geometry.py: +x along F of the probe's MOT
+axis (geometry.to_pump_frame), +z up. Time dependence exp(-i w t). The spin of a field about a fixed axis a is
     s_a = Im(E* x E) . a
 so s_x = +1 is sigma+ about +x, whatever the direction of travel.
 
@@ -15,10 +15,14 @@ Atoms (FWM signal): the Zeeman-coherence scheme of Moretti, Felinto & Tabosa,
 Phys. Rev. A 79, 023825 (2009), Fig. 1. The strong writing beam W and the probe W'
 have opposite circular polarisation, the read beam R counter-propagates to W with
 the circular polarisation opposite to W, and the retrieved signal D has the
-circular polarisation opposite to R. In a retro-reflected MOT beam, W = F and
-R = B. The signal is taken as the complex conjugate of the probe field at the
-cloud (a vector phase conjugate). For a circular probe this gives exactly the
-Moretti polarisations (probe sigma-, signal sigma+ about +x).
+circular polarisation opposite to R. Here the probe runs 4 deg from the retro beam B
+(geometry.py), so W = B and R = F. The probe then has the same sigma as F about +x, and
+the signal the opposite sigma. The signal is taken as the complex conjugate of the probe
+field at the cloud (a vector phase conjugate).
+
+Arm (geometry.py): PBS B (transmits horizontal) -> [HWP] -> QWP -> telescope -> M1 -> D-mirror.
+The HWP is needed only to correct a mirror coating retardance. Leave it out for ideal mirrors:
+its face reflections return horizontal and leak to PD FWM.
 
 Run:
     python optics/fwm_probe/polarisation.py [--mirror-retardance-deg 10] [--forward-pump sigma+]
@@ -87,6 +91,11 @@ def describe(E, k):
 
 # --- The system ---------------------------------------------------------------------------
 
+def vec(v):
+    """Thesis-frame table vector -> 3-vector in the pump frame."""
+    return np.array([*geo.to_pump_frame(np.asarray(v)), 0.0])
+
+
 def mot_pumps(forward_sign):
     """Forward pump F through the input QWP, and B after the retro QWP + mirror."""
     kF = X
@@ -105,12 +114,12 @@ def mot_pumps(forward_sign):
 
 def probe_arm(hwp_deg, qwp_deg, retardance_deg):
     """Probe from the PBS (transmitted = horizontal) to the cloud."""
-    k = np.array([*geo.arm_direction(), 0.0])
+    k = vec(geo.main_arm_direction())
     E0 = unit(np.cross(k, Z))                            # PBS transmits the horizontal (p) state
     E = waveplate(E0, k, fast_axis(k, hwp_deg), 0.5)
     E = waveplate(E, k, fast_axis(k, qwp_deg), 0.25)
-    n = np.array([*geo.d_mirror_normal(), 0.0])
-    E, k_cloud = mirror(E, k, n, retardance_deg)
+    E, k = mirror(E, k, vec(geo.m1_normal()), retardance_deg)
+    E, k_cloud = mirror(E, k, vec(geo.d_mirror_normal()), retardance_deg)
     return E0, E, k_cloud
 
 
@@ -119,9 +128,9 @@ def signal_return(P, k_cloud, hwp_deg, qwp_deg, retardance_deg):
     The waveplates keep the physical fast axes they have for the forward probe."""
     S = np.conj(P)
     k = -k_cloud
-    n = np.array([*geo.d_mirror_normal(), 0.0])
-    E, k = mirror(S, k, n, retardance_deg)
-    k_arm = np.array([*geo.arm_direction(), 0.0])
+    E, k = mirror(S, k, vec(geo.d_mirror_normal()), retardance_deg)
+    E, k = mirror(E, k, vec(geo.m1_normal()), retardance_deg)
+    k_arm = vec(geo.main_arm_direction())
     E = waveplate(E, k, fast_axis(k_arm, qwp_deg), 0.25)
     E = waveplate(E, k, fast_axis(k_arm, hwp_deg), 0.5)
     return S, E, k
@@ -143,9 +152,9 @@ def solve_waveplates(target_sign, retardance_deg):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--forward-pump', choices=['sigma+', 'sigma-'], default='sigma+',
-                        help='circular state of the MOT beam entering face 1, about +x (check in the lab)')
+                        help='circular state of F (the axis-B beam from its input optics), about +x')
     parser.add_argument('--mirror-retardance-deg', type=float, default=0.0,
-                        help='extra s/p phase of the D-mirror coating at this angle of incidence')
+                        help='extra s/p phase of the M1 and D-mirror coatings at their angles of incidence')
     args = parser.parse_args()
     f_sign = 1 if args.forward_pump == 'sigma+' else -1
 
@@ -153,14 +162,14 @@ def main():
     F, B, _ = mot_pumps(f_sign)
     print(f'  forward pump F : {describe(F, X)}')
     print(f'  backward pump B: {describe(B, -X)}  (same helicity, opposite sigma: standard MOT pair)')
-    print('  -> F and B match Moretti et al. 2009: W and the read beam R have opposite circular polarisation.')
+    print('  -> B is the writing beam W (the probe runs 4 deg from it), F the read beam R: opposite sigma.')
 
-    print('\n=== Probe (must be circular, opposite to F: Moretti W\' vs W) ===')
-    score, hwp, qwp = solve_waveplates(-f_sign, args.mirror_retardance_deg)
+    print('\n=== Probe (circular, opposite to W = B, so the same sigma as F) ===')
+    score, hwp, qwp = solve_waveplates(f_sign, args.mirror_retardance_deg)
     E0, P, k_cloud = probe_arm(hwp, qwp, args.mirror_retardance_deg)
-    print(f'  D-mirror s/p retardance: {args.mirror_retardance_deg:g} deg')
+    print(f'  M1 and D-mirror s/p retardance: {args.mirror_retardance_deg:g} deg each')
     print(f'  HWP fast axis {hwp:+.2f} deg, QWP fast axis {qwp:+.2f} deg '
-          '(from horizontal, counterclockwise looking from the fibre towards the cell)')
+          '(from horizontal, counterclockwise looking along the main arm towards M1)')
     print(f'  probe at the cloud: {describe(P, k_cloud)}')
 
     print('\n=== FWM signal back through the probe optics ===')
@@ -168,10 +177,9 @@ def main():
     print(f'  signal at the cloud: {describe(S, -k_cloud)}')
     overlap = abs(np.vdot(unit(E0), E_back / np.linalg.norm(E_back))) ** 2
     print(f'  signal after the waveplates: {overlap:.4f} in the PBS transmission state')
-    print('  -> the signal returns in the same linear state as the input probe (phase conjugation).')
-    print('     A PBS cannot separate it from the probe, and it travels back towards the fibre.')
-    print('     Use the non-polarising pick-off plate (R:T 90:10): 90 % of the signal goes to the photodiode,')
-    print('     10 % of the probe power goes on to the cloud (Lezama et al. 2001 used a 50/50 splitter).')
+    print('  -> the signal returns horizontal, like the probe after PBS B (phase conjugation), so PBS B')
+    print('     passes it. The lambda/2 at 22.5 deg turns it to 45 deg, and PBS A reflects half of it to')
+    print('     PD FWM. Mirror-like reflections from beyond the QWP return vertical and PBS B dumps them.')
     return hwp, qwp
 
 
